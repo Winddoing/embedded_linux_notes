@@ -25,9 +25,6 @@
         "toc",
     ],
     "pluginsConfig": {
-        "github": {
-            "url": "https://github.com/Winddoing/embedded_linux_notes"
-        },
         "search-pro": {
             "cutWordLib": "nodejieba",
             "defineWord": ["gitbook-use"]
@@ -55,5 +52,10 @@
         "sitemap": {
             "hostname": "https://winddoing.gitbooks.io/embedded_linux_notes/content/"
         }
+
+        "edit-link": {
+                "base": "https://github.com/Winddoing/embedded_linux_notes/edit/master",
+                "label": "Edit This Page"
+         }
     }
 }
