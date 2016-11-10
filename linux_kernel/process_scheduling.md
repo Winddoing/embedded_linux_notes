@@ -6,6 +6,19 @@
 
 http://wenku.baidu.com/link?url=hpHxRSz8ix9nvqJqn2nWzlFF_BF3N7pZUQMnoFQY967rB-t0fWd3gl2NzPIV008mHEtl0uaqHZlNbRQIkMgcjqix_WkOH5KtRwbyaRGjmIO
 
+
+## 调度
+
+### 初始化
+
+sched_init ---- FAIR_GROUP_SCHED
+
+1. 初始化一个task_groups链表
+
+
+
+
+
 ## 抢占
 
 ## 进程的状态
@@ -112,14 +125,23 @@ do_fork()->copy_prcess()->dup_task_struct()
 ### 工作队列
 
 ### 等待队列
+遇到的等待队列
+drivers/base/dd.c
+static DECLARE_WAIT_QUEUE_HEAD(probe_waitqueue); //设备驱动全部加载完成通过probe_waitqueue队列来同步各个驱动的probe
+
+
+
+O(1)是多队列调度器，每个处理器都有一条自己的运行队列
 
 
 
 
-module_init  是否创建新的进程
 
-	#define module_init(initfn)                 \                   
-   	 static inline initcall_t __inittest(void)       \
-   	 { return initfn; }                  \
-   	 int init_module(void) __attribute__((alias(#initfn)));
+
+
+## 多核进程管理
+
+## numa
+
+非均匀存储器存取（Nonuniform-Memory-Access，简称NUMA）模型
 

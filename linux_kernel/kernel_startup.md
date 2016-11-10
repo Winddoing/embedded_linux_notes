@@ -89,6 +89,26 @@ Linux中的所有进程都是有init进程创建并运行的。首先Linux内核
 
 * kthreadd进程由idle通过kernel_thread创建，并始终运行在内核空间, 负责所有内核线程的调度和管理
 
+## init线程
+
+1. 设置CPU和系统相关,如SMP,NUMA
+2. 初始化设备驱动 do_basic_setup();
+static void __init do_basic_setup(void)                
+{   
+    cpuset_init_smp();
+    usermodehelper_init();
+    shmem_init();
+    driver_init(); //初始化与设备驱动相关的设备模型等
+    init_irq_proc();
+    do_ctors();
+    usermodehelper_enable();
+    do_initcalls();   //调用所有通过module_init静态编译进入内核的设备驱动程序
+}   
+
+3. 挂载文件系统prepare_namespace
+
+4. 通过run_init_process启动用户空间的init进程
+
 ### ps
 
 =====>$ps aux

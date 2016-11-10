@@ -5,7 +5,7 @@
     "generator": "site",
     "language" : "zh-hans",
     "gitbook" : "2.6.4",
-    },
+
    "plugins": [
         "-search",
         "search-pro@1.0.7",
