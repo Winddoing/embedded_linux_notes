@@ -4,7 +4,6 @@
     "author" : "winddoing",
     "generator": "site",
     "language" : "zh-hans",
-    "gitbook" : "2.6.4",
 
    "plugins": [
         "-search",
@@ -23,6 +22,7 @@
         "sitemap@1.0.2",
         "local-video",
         "toc",
+		"edit-link"
     ],
     "pluginsConfig": {
         "search-pro": {
