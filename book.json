@@ -4,6 +4,7 @@
     "author" : "winddoing",
     "generator": "site",
     "language" : "zh-hans",
+	"gitbook" : "2.6.4",
 
    "plugins": [
         "-search",
@@ -23,14 +24,14 @@
         "local-video",
         "toc",
         "edit-link"
-       
+
     ],
     "pluginsConfig": {
         "search-pro": {
             "cutWordLib": "nodejieba",
             "defineWord": ["gitbook-use"]
          },
-        
+
         "sharing": {
             "weibo": true,
             "facebook": true,
@@ -43,13 +44,13 @@
                 "weibo", "instapaper"
             ]
         },
-        
+
         "tbfed-pagefooter": {
             "copyright":"Copyright &copy winddoing 2016",
             "modify_label": "该文件修订时间：",
             "modify_format": "YYYY-MM-DD HH:mm:ss"
         },
-        
+
 
         "sitemap": {
             "hostname": "https://winddoing.gitbooks.io/embedded_linux_notes/content/"
@@ -59,6 +60,6 @@
                 "base": "https://github.com/Winddoing/embedded_linux_notes/edit/master",
                 "label": "Edit This Page"
          }
-        
+
     }
 }
