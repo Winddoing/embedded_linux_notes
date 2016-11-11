@@ -6,4 +6,4 @@
 
 | 在线 | PDF |
 | ---- | --- |
-|[预览](https://winddoing.github.io/old_notes/) | [下载](https://raw.githubusercontent.com/Winddoing/old_notes/master/embedded_linux) |
+|[预览](https://winddoing.github.io/old_notes/) | [下载](https://github.com/Winddoing/old_notes/raw/master/embedded_linux_notes.pdf) |
