@@ -7,7 +7,95 @@
 http://wenku.baidu.com/link?url=hpHxRSz8ix9nvqJqn2nWzlFF_BF3N7pZUQMnoFQY967rB-t0fWd3gl2NzPIV008mHEtl0uaqHZlNbRQIkMgcjqix_WkOH5KtRwbyaRGjmIO
 
 
+## 相关
+
+在用户空间，或者应用编程领域 ，Linux提供了一些API或者系统调用来影响Linux的内核调度器，或者是获取内核调度器的信息。比如可以获取或者设置进程的调度策略、优先级，获取CPU时间片大小的信息。
+
+
 ## 调度
+
+### 介绍
+
+从2.4的非抢占内核发展到今天的可抢占内核，普通进程的调度算法也从O(1)到CFS，一个好的调度算法应当考虑以下几个方面：
+
+* 公平：保证每个进程得到合理的CPU时间。
+* 高效：使CPU保持忙碌状态，即总是有进程在CPU上运行。
+* 响应时间：使交互用户的响应时间尽可能短。
+* 周转时间：使批处理用户等待输出的时间尽可能短。
+* 吞吐量：使单位时间内处理的进程数量尽可能多。
+* 负载均衡：在多核多处理器系统中提供更高的性能
+
+而在实际的内核中实时进程和普通进程为并存,因此调度算法至少存在两类.
+
+
+### 调度策略
+
+```
+/*
+ * Scheduling policies
+ */
+#define SCHED_NORMAL        0                                                              
+#define SCHED_FIFO      1
+#define SCHED_RR        2
+#define SCHED_BATCH     3
+/* SCHED_ISO: reserved but not implemented yet */
+#define SCHED_IDLE      5
+/* Can be ORed in to make sure the process is reverted back to SCHED_NORMAL on fork */
+#define SCHED_RESET_ON_FORK     0x40000000
+```
+
+在linux中调度策略主要有五种:
+
+1. SCHED_FIFO
+
+实时进程使用的调度策略，此调度策略的进程一旦使用CPU则一直运行，直到有比其更高优先级的实时进程进入队列，或者其自动放弃CPU，适用于时间性要求比较高，但每次运行时间比较短的进程。
+
+2. SCHED_RR
+
+实时进程使用的时间片轮转法策略，实时进程的时间片用完后，调度器将其放到队列末尾，这样每个实时进程都可以执行一段时间。适用于每次运行时间比较长的实时进程。
+
+3. SCHED_NORMAL
+
+普通进程使用的调度策略，Linux默认的调度策略，其值为0 非实时进程的调度策略,也就是分时调度策略。分时进程则通过nice和counter值决定权值，nice越小，counter越大，被调度的概率越大，也就是曾经使用了cpu最少的进程将会得到优先调
+
+4. SCHED_BATCH
+
+除了不能抢占外与常规任务一样，允许任务运行更长时间，更好地使用高速缓存，适合于成批处理的工作。
+
+5. SCHED_IDLE
+
+它甚至比nice 19还有弱，为了避免优先级反转使用,这是由CFS导入的新等级。CPU空闲时，即SCHED_IDLE等级以外处于可执行状态的进程消失时，将被赋予执行权。也就是它将成为优先级最低的进程。
+
+
+### 调度器类
+
+| 名称  | 作用 |
+| ---- | ---- |
+| idle_sched_class | pid=0, 调度类属于：idel_sched_class，所以在ps里面是看不到的。一般运行在开机过程和cpu异常的时候做dump。|
+| stop_sched_class |优先级最高的线程，会中断所有其他线程，且不会被其他任务打断。作用：1.发生在cpu_stop_cpu_callback 进行cpu之间任务migration；2.HOTPLUG_CPU的情况下关闭任务。|
+| rt_sched_class   | RT，作用：实时线程 |
+| fair_sched_class | CFS（公平），作用：一般常规线程 |
+
+不明白?
+
+### 调度
+
+首先，我们需要清楚，什么样的进程会进入调度器进行选择，就是处于TASK_RUNNING状态的进程，而其他状态下的进程都不会进入调度器进行调度。系统发生调度的时机如下
+
+* 调用cond_resched()时(mmc中mmc_delay())
+* 显式调用schedule()时
+* 从系统调用或者异常中断返回用户空间时
+* 从中断上下文返回用户空间时
+
+当开启内核抢占(默认开启)时，会多出几个调度时机，如下
+
+* 在系统调用或者异常中断上下文中调用preempt_enable()时(多次调用preempt_enable()时，系统只会在最后一次调用时会调度)
+* 在中断上下文中，从中断处理函数返回到可抢占的上下文时(这里是中断下半部，中断上半部实际上会关中断，而新的中断只会被登记，由于上半部处理很快，上半部处理完成后才会执行新的中断信号，这样就形成了中断可重入)
+
+而在系统启动调度器初始化时会初始化一个调度定时器，调度定时器每隔一定时间执行一个中断，在中断会对当前运行进程运行时间进行更新，如果进程需要被调度，在调度定时器中断中会设置一个调度标志位，之后从定时器中断返回，因为上面已经提到从中断上下文返回时是有调度时机的，在内核源码的汇编代码中所有中断返回处理都必须去判断调度标志位是否设置，如设置则执行schedule()进行调度。而我们知道实时进程和普通进程是共存的，调度器是怎么协调它们之间的调度的呢，其实很简单，每次调度时，会先在实时进程运行队列中查看是否有可运行的实时进程，如果没有，再去普通进程运行队列找下一个可运行的普通进程，如果也没有，则调度器会使用idle进程进行运行。之后的章节会放上代码进行详细说明。
+
+系统并不是每时每刻都允许调度的发生，当处于硬中断期间的时候，调度是被系统禁止的，之后硬中断过后才重新允许调度。而对于异常，系统并不会禁止调度，也就是在异常上下文中，系统是有可能发生调度的。
+
 
 ### 初始化
 
@@ -15,7 +103,37 @@ sched_init ---- FAIR_GROUP_SCHED
 
 1. 初始化一个task_groups链表
 
+在start_kernel中对调度器进行初始化的函数就是sched_init，其主要工作为
 
+1. 对相关数据结构分配内存
+2. 初始化root_task_group
+3. 初始化每个CPU的rq队列(包括其中的cfs队列和实时进程队列)
+4. 将init_task进程转变为idle进程
+　　需要说明的是init_task在这里会被转变为idle进程，但是它还会继续执行初始化工作，相当于这里只是给init_task挂个idle进程的名号，它其实还是init_task进程，只有到最后init_task进程开启了kernel_init和kthreadd进程之后，才转变为真正意义上的idle进程。
+
+
+### 相关流程
+
+#### 数据结构
+
+1. 运行队列(struct rq)
+一个CPU一个运行队列
+
+定义: DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
+
+相关操作:
+* #define cpu_rq(cpu)     (&per_cpu(runqueues, (cpu))) 
+	返回指定CPU的运行队列指针.
+* #define this_rq()       (&__get_cpu_var(runqueues))
+	返回当前CPU的运行队列指针.	
+* #define task_rq(p)      cpu_rq(task_cpu(p))
+	返回给定任务的运行队列.
+* #define cpu_curr(cpu)       (cpu_rq(cpu)->curr)
+	返回指定CPU的当前进程
+* #define raw_rq()        (&__raw_get_cpu_var(runqueues))
+
+
+	
 
 
 
@@ -145,3 +263,10 @@ O(1)是多队列调度器，每个处理器都有一条自己的运行队列
 
 非均匀存储器存取（Nonuniform-Memory-Access，简称NUMA）模型
 
+
+
+
+
+## 参考
+
+1. [调度器](http://www.cnblogs.com/tolimit/p/4303052.html)
