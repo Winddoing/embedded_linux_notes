@@ -92,7 +92,7 @@ http://wenku.baidu.com/link?url=hpHxRSz8ix9nvqJqn2nWzlFF_BF3N7pZUQMnoFQY967rB-t0
 * 在系统调用或者异常中断上下文中调用preempt_enable()时(多次调用preempt_enable()时，系统只会在最后一次调用时会调度)
 * 在中断上下文中，从中断处理函数返回到可抢占的上下文时(这里是中断下半部，中断上半部实际上会关中断，而新的中断只会被登记，由于上半部处理很快，上半部处理完成后才会执行新的中断信号，这样就形成了中断可重入)
 
-而在系统启动调度器初始化时会初始化一个调度定时器，调度定时器每隔一定时间执行一个中断，在中断会对当前运行进程运行时间进行更新，如果进程需要被调度，在调度定时器中断中会设置一个调度标志位，之后从定时器中断返回，因为上面已经提到从中断上下文返回时是有调度时机的，在内核源码的汇编代码中所有中断返回处理都必须去判断调度标志位是否设置，如设置则执行schedule()进行调度。而我们知道实时进程和普通进程是共存的，调度器是怎么协调它们之间的调度的呢，其实很简单，每次调度时，会先在实时进程运行队列中查看是否有可运行的实时进程，如果没有，再去普通进程运行队列找下一个可运行的普通进程，如果也没有，则调度器会使用idle进程进行运行。之后的章节会放上代码进行详细说明。
+而在系统启动调度器初始化时会初始化一个调度定时器，调度定时器每隔一定时间执行一个中断，在中断会对当前运行进程运行时间进行更新，如果进程需要被调度，在调度定时器中断中会设置一个调度标志位，之后从定时器中断返回，*因为上面已经提到从中断上下文返回时是有调度时机的，在内核源码的汇编代码中所有中断返回处理都必须去判断调度标志位是否设置，如设置则执行schedule()进行调度*。而我们知道实时进程和普通进程是共存的，调度器是怎么协调它们之间的调度的呢，其实很简单，每次调度时，会先在实时进程运行队列中查看是否有可运行的实时进程，如果没有，再去普通进程运行队列找下一个可运行的普通进程，如果也没有，则调度器会使用idle进程进行运行。之后的章节会放上代码进行详细说明。
 
 系统并不是每时每刻都允许调度的发生，当处于硬中断期间的时候，调度是被系统禁止的，之后硬中断过后才重新允许调度。而对于异常，系统并不会禁止调度，也就是在异常上下文中，系统是有可能发生调度的。
 
@@ -116,23 +116,159 @@ sched_init ---- FAIR_GROUP_SCHED
 
 #### 数据结构
 
+每个CPU对应包含一个运行队列结构(struct rq)，而每个运行队列又包含有其自己的实时进程运行队列(struct rt_rq)、普通进程运行队列(struct cfs_rq)，也就是说每个CPU都有他们自己的实时进程运行队列及普通进程运行队列
+
 1. 运行队列(struct rq)
 一个CPU一个运行队列
 
 定义: DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 相关操作:
-* #define cpu_rq(cpu)     (&per_cpu(runqueues, (cpu))) 
-	返回指定CPU的运行队列指针.
-* #define this_rq()       (&__get_cpu_var(runqueues))
-	返回当前CPU的运行队列指针.	
-* #define task_rq(p)      cpu_rq(task_cpu(p))
-	返回给定任务的运行队列.
-* #define cpu_curr(cpu)       (cpu_rq(cpu)->curr)
-	返回指定CPU的当前进程
-* #define raw_rq()        (&__raw_get_cpu_var(runqueues))
+
+``` C
+#define cpu_rq(cpu)     (&per_cpu(runqueues, (cpu))) 	//返回指定CPU的运行队列指针.
+#define this_rq()       (&__get_cpu_var(runqueues))	//返回当前CPU的运行队列指针.	
+#define task_rq(p)      cpu_rq(task_cpu(p))		//返回给定任务的运行队列.
+#define cpu_curr(cpu)       (cpu_rq(cpu)->curr)		//返回指定CPU的当前进程
+#define raw_rq()        (&__raw_get_cpu_var(runqueues))
+```
 
 
+2. 调度组(struct task_group)
+
+``` C
+/* 进程组，用于实现组调度 */
+struct task_group {
+    /* 用于进程找到其所属进程组结构 */
+    struct cgroup_subsys_state css;
+
+#ifdef CONFIG_FAIR_GROUP_SCHED
+    /* CFS调度器的进程组变量，在 alloc_fair_sched_group() 中进程初始化及分配内存 */
+    /* 该进程组在每个CPU上都有对应的一个调度实体，因为有可能此进程组同时在两个CPU上运行(它的A进程在CPU0上运行，B进程在CPU1上运行) */
+    struct sched_entity **se;
+    /* 进程组在每个CPU上都有一个CFS运行队列(为什么需要，稍后解释) */
+    struct cfs_rq **cfs_rq;
+    /* 用于保存优先级默认为NICE 0的优先级 */
+    unsigned long shares;
+
+#ifdef    CONFIG_SMP
+    atomic_long_t load_avg;
+    atomic_t runnable_avg;
+#endif
+#endif
+
+#ifdef CONFIG_RT_GROUP_SCHED
+    /* 实时进程调度器的进程组变量，同 CFS */
+    struct sched_rt_entity **rt_se;
+    struct rt_rq **rt_rq;
+
+    struct rt_bandwidth rt_bandwidth;
+#endif
+
+    struct rcu_head rcu;
+    /* 用于建立进程链表(属于此调度组的进程链表) */
+    struct list_head list;
+
+    /* 指向其上层的进程组，每一层的进程组都是它上一层进程组的运行队列的一个调度实体，在同一层中，进程组和进程被同等对待 */
+    struct task_group *parent;
+    /* 进程组的兄弟结点链表 */
+    struct list_head siblings;
+    /* 进程组的儿子结点链表 */
+    struct list_head children;
+
+#ifdef CONFIG_SCHED_AUTOGROUP
+    struct autogroup *autogroup;
+#endif
+
+    struct cfs_bandwidth cfs_bandwidth;
+};
+```
+
+
+3. 调度实体(struct sched_entity)
+
+``` C
+/* 一个调度实体(红黑树的一个结点)，其包含一组或一个指定的进程，包含一个自己的运行队列，一个父亲指针，一个指向需要调度的运行队列指针 */
+struct sched_entity {
+    /* 权重，在数组prio_to_weight[]包含优先级转权重的数值 */
+    struct load_weight    load;        /* for load-balancing */
+    /* 实体在红黑树对应的结点信息 */
+    struct rb_node        run_node;    
+    /* 实体所在的进程组 */
+    struct list_head    group_node;
+    /* 实体是否处于红黑树运行队列中 */
+    unsigned int        on_rq;
+
+    /* 开始运行时间 */
+    u64            exec_start;
+    /* 总运行时间 */
+    u64            sum_exec_runtime;
+    /* 虚拟运行时间，在时间中断或者任务状态发生改变时会更新
+     * 其会不停增长，增长速度与load权重成反比，load越高，增长速度越慢，就越可能处于红黑树最左边被调度
+     * 每次时钟中断都会修改其值
+     * 具体见calc_delta_fair()函数
+     */
+    u64            vruntime;
+    /* 进程在切换进CPU时的sum_exec_runtime值 */
+    u64            prev_sum_exec_runtime;
+
+    /* 此调度实体中进程移到其他CPU组的数量 */
+    u64            nr_migrations;
+
+#ifdef CONFIG_SCHEDSTATS
+    /* 用于统计一些数据 */
+    struct sched_statistics statistics;
+#endif
+
+#ifdef CONFIG_FAIR_GROUP_SCHED
+    /* 代表此进程组的深度，每个进程组都比其parent调度组深度大1 */
+    int            depth;
+    /* 父亲调度实体指针，如果是进程则指向其运行队列的调度实体，如果是进程组则指向其上一个进程组的调度实体
+     * 在 set_task_rq 函数中设置
+     */
+    struct sched_entity    *parent;
+    /* 实体所处红黑树运行队列 */
+    struct cfs_rq        *cfs_rq;        
+    /* 实体的红黑树运行队列，如果为NULL表明其是一个进程，若非NULL表明其是调度组 */
+    struct cfs_rq        *my_q;
+#endif
+
+#ifdef CONFIG_SMP
+    /* Per-entity load-tracking */
+    struct sched_avg    avg;
+#endif
+};
+```
+
+4. task_struct中调度相关信息
+
+``` C
+struct task_struct {
+    ........
+    /* 表示是否在运行队列 */
+    int on_rq;
+
+    /* 进程优先级 
+     * prio: 动态优先级，范围为100~139，与静态优先级和补偿(bonus)有关
+     * static_prio: 静态优先级，static_prio = 100 + nice + 20 (nice值为-20~19,所以static_prio值为100~139)
+     * normal_prio: 没有受优先级继承影响的常规优先级，具体见normal_prio函数，跟属于什么类型的进程有关
+     */
+    int prio, static_prio, normal_prio;
+    /* 实时进程优先级 */
+    unsigned int rt_priority;
+    /* 调度类，调度处理函数类 */
+    const struct sched_class *sched_class;
+    /* 调度实体(红黑树的一个结点) */
+    struct sched_entity se;
+    /* 调度实体(实时调度使用) */
+    struct sched_rt_entity rt;
+#ifdef CONFIG_CGROUP_SCHED
+    /* 指向其所在进程组 */
+    struct task_group *sched_task_group;
+#endif
+    ........
+}
+```
 	
 
 
