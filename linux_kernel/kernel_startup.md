@@ -78,7 +78,7 @@ kthread_create_list链表为空
 
 Linux下有3个特殊的进程，idle进程(PID=0), init进程(PID=1)和kthreadd(PID=2)
 
-* idle进程由系统自动创建, 运行在内核态
+* idle进程(也称swapper)由系统自动创建, 运行在内核态
 
 idle进程其pid=0，其前身是系统创建的第一个进程，也是唯一一个没有通过fork或者kernel_thread产生的进程。完成加载系统后，演变为进程调度、交换
 

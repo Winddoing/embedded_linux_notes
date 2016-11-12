@@ -269,7 +269,86 @@ struct task_struct {
     ........
 }
 ```
-	
+
+5. 调度类(struct sched_class)
+
+``` C
+struct sched_class {
+    /* 下一优先级的调度类
+     * 调度类优先级顺序: stop_sched_class -> dl_sched_class -> rt_sched_class -> fair_sched_class -> idle_sched_class
+     */
+    const struct sched_class *next;
+
+    /* 将进程加入到运行队列中，即将调度实体（进程）放入红黑树中，并对 nr_running 变量加1 */
+    void (*enqueue_task) (struct rq *rq, struct task_struct *p, int flags);
+    /* 从运行队列中删除进程，并对 nr_running 变量中减1 */
+    void (*dequeue_task) (struct rq *rq, struct task_struct *p, int flags);
+    /* 放弃CPU，在 compat_yield sysctl 关闭的情况下，该函数实际上执行先出队后入队；在这种情况下，它将调度实体放在红黑树的最右端 */
+    void (*yield_task) (struct rq *rq);
+    bool (*yield_to_task) (struct rq *rq, struct task_struct *p, bool preempt);
+
+    /* 检查当前进程是否可被新进程抢占 */
+    void (*check_preempt_curr) (struct rq *rq, struct task_struct *p, int flags);
+
+    /*
+     * It is the responsibility of the pick_next_task() method that will
+     * return the next task to call put_prev_task() on the @prev task or
+     * something equivalent.
+     *
+     * May return RETRY_TASK when it finds a higher prio class has runnable
+     * tasks.
+     */
+    /* 选择下一个应该要运行的进程运行 */
+    struct task_struct * (*pick_next_task) (struct rq *rq,
+                        struct task_struct *prev);
+    /* 将进程放回运行队列 */
+    void (*put_prev_task) (struct rq *rq, struct task_struct *p);
+
+#ifdef CONFIG_SMP
+    /* 为进程选择一个合适的CPU */
+    int (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);
+    /* 迁移任务到另一个CPU */
+    void (*migrate_task_rq)(struct task_struct *p, int next_cpu);
+    /* 用于上下文切换后 */
+    void (*post_schedule) (struct rq *this_rq);
+    /* 用于进程唤醒 */
+    void (*task_waking) (struct task_struct *task);
+    void (*task_woken) (struct rq *this_rq, struct task_struct *task);
+    /* 修改进程的CPU亲和力(affinity) */
+    void (*set_cpus_allowed)(struct task_struct *p,
+                 const struct cpumask *newmask);
+    /* 启动运行队列 */
+    void (*rq_online)(struct rq *rq);
+    /* 禁止运行队列 */
+    void (*rq_offline)(struct rq *rq);
+#endif
+    /* 当进程改变它的调度类或进程组时被调用 */
+    void (*set_curr_task) (struct rq *rq);
+    /* 该函数通常调用自 time tick 函数；它可能引起进程切换。这将驱动运行时（running）抢占 */
+    void (*task_tick) (struct rq *rq, struct task_struct *p, int queued);
+    /* 在进程创建时调用，不同调度策略的进程初始化不一样 */
+    void (*task_fork) (struct task_struct *p);
+    /* 在进程退出时会使用 */
+    void (*task_dead) (struct task_struct *p);
+
+    /* 用于进程切换 */
+    void (*switched_from) (struct rq *this_rq, struct task_struct *task);
+    void (*switched_to) (struct rq *this_rq, struct task_struct *task);
+    /* 改变优先级 */
+    void (*prio_changed) (struct rq *this_rq, struct task_struct *task,
+             int oldprio);
+
+    unsigned int (*get_rr_interval) (struct rq *rq,
+                     struct task_struct *task);
+
+    void (*update_curr) (struct rq *rq);
+
+#ifdef CONFIG_FAIR_GROUP_SCHED
+    void (*task_move_group) (struct task_struct *p, int on_rq);
+#endif
+};
+```
+
 
 
 
