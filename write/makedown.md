@@ -2,11 +2,9 @@
 
 ## 代码高亮
 
-```
-\``` C
- printf("hello word!\n");
-\```
-```
+* ``` C
+*  printf("hello word!\n");
+* ```
 
 效果：
 
@@ -16,20 +14,18 @@
 
 ## 流程图
 
-```
-\```
-st=>start: Start:>https://www.zybuluo.com
-io=>inputoutput: verification
-op=>operation: Your Operation
-cond=>condition: Yes or No?
-sub=>subroutine: Your Subroutine
-e=>end
+* ```flow
+* st=>start: Start:>https://www.zybuluo.com
+* io=>inputoutput: verification
+* op=>operation: Your Operation
+* cond=>condition: Yes or No?
+* sub=>subroutine: Your Subroutine
+* e=>end
 
-st->io->op->cond
-cond(yes)->e
-cond(no)->sub->io
-\```
-```
+* st->io->op->cond
+* cond(yes)->e
+* cond(no)->sub->io
+* ```
 
 效果：
 
