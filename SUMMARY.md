@@ -1,5 +1,5 @@
 # 目录
-
+* [嵌入式相关](README.md)
 * [Linux 内核相关](linux_kernel/README.md)
 	* [内核调试](linux_kernel/debug.md)
 	* [内核同步](linux_kernel/sync.md)
