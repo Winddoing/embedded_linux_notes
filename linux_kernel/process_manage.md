@@ -41,6 +41,60 @@
 3. 消亡
 
 
+
+
+## do_fork
+
+
+1. 实时拷贝的实现 --- 写时复制  
+2. 父进程返回子进程ID
+
+
+什么时候复制完成,什么时候执行
+
+const struct cred __rcu *real_cred;  //cred负责保存进程安全上下文
+
+### 流程
+
+1. do_fork
+long do_fork(unsigned long clone_flags,
+          unsigned long stack_start,
+          unsigned long stack_size,
+          int __user *parent_tidptr,
+          int __user *child_tidptr)
+
+参数:
+   clone_flags: 进程的相关标志,属性
+   stack_start: 子进程用户态的堆栈地址????
+   stack_size: 堆栈大小
+   parent_tidptr: 父进程在用户态下pid的地址，该参数在CLONE_PARENT_SETTID标志被设定时有意义
+   child_tidptr: 子进程在用户态下pid的地址，该参数在CLONE_CHILD_SETTID标志被设定时有意义
+2. copy_process()
+主要完成进程的拷贝,包括task_struct,thread_info,内核栈
+
+3. dup_task_struct()
+
+``` C
+ int node = tsk_fork_get_node(orig);
+ int err;
+
+ tsk = alloc_task_struct_node(node);
+ if (!tsk)
+     return NULL;
+
+ ti = alloc_thread_info_node(tsk, node);                
+ if (!ti)
+     goto free_tsk;
+ 
+ err = arch_dup_task_struct(tsk, orig);
+```
+开始拷贝,子进程拥有自己独立内核栈和thread_info,而task_struct中的其他资源均为父进程,此时还包括进程的地址空间.
+
+**由于每个进程的地址空间时独享的,因此子进程何时修改自己进程的地址空间**
+
+4. copy_thread()
+copy_thread设置子进程的栈信息，并将子进程的返回值置为0(返回值保存在v0中)
+
 ## 参考
 
 [linux进程调度之 FIFO 和 RR 调度策略](http://blog.chinaunix.net/uid-24774106-id-3379478.html)
