@@ -82,13 +82,24 @@ long do_fork(unsigned long clone_flags,
  if (!tsk)
      return NULL;
 
- ti = alloc_thread_info_node(tsk, node);                
+ ti = alloc_thread_info_node(tsk, node); //进程的栈空间是独立的
  if (!ti)
      goto free_tsk;
  
  err = arch_dup_task_struct(tsk, orig);
 ```
 开始拷贝,子进程拥有自己独立内核栈和thread_info,而task_struct中的其他资源均为父进程,此时还包括进程的地址空间.
+
+子进程中的栈空间是拷贝父进程的栈空间,setup_thread_stack(tsk, orig)
+
+stackend = end_of_stack(tsk);
+*stackend = STACK_END_MAGIC;  
+设置栈底的检测,主要方式栈底回退时溢出.
+
+account_kernel_stack(ti, 1);
+
+systemtap
+
 
 **由于每个进程的地址空间时独享的,因此子进程何时修改自己进程的地址空间**
 
