@@ -485,3 +485,4 @@ O(1)是多队列调度器，每个处理器都有一条自己的运行队列
 ## 参考
 
 1. [调度器](http://www.cnblogs.com/tolimit/p/4303052.html)
+2. http://blog.csdn.net/lsl180236/article/details/51155373

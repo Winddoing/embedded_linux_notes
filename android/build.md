@@ -34,6 +34,10 @@ cp -dar out/target/product/imx51_bbg/system /nfs/rootfs/
 
 
 
+## 
+
+
+
 ## 参考
 
 1. [android开发](http://www.kancloud.cn/digest/imx6-android/148862)
