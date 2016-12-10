@@ -349,8 +349,13 @@ struct sched_class {
 };
 ```
 
+在内核中的所有现有调度类是按优先级的排序的列表中调度类。被称为该结构的第一个成员下一步是一个指针，指向下一个调度类具有较低的优先级，该列表中。使用列表来优先考虑不同类型在别人面前的任务。在当前Linux 版本中，其初始流程如下所示︰
 
+``` C
+stop_sched_class → rt_sched_class → fair_sched_class → idle_sched_class → NULL
+```
 
+idle模式----swapper进程
 
 ## 抢占
 
@@ -393,6 +398,31 @@ struct sched_class {
 	current->threadinfo.preemptcount的值不为0，表示当前进程持有锁不能释放CPU控制权(不能被抢占)
 
 ### preempt_count()
+
+PREEMPT_ACTIVE  
+
+进程一旦调用了schedule，如果再次被调度运行，那么有下面几种可能：
+1.状态为TASK_RUNNING，处于运行队列，那么它肯定有机会再运行；
+2.处于睡眠队列，那么一旦条件满足被唤醒，那么它就会运行。
+那么如果一个进程被抢占的话，而且它不在运行队列，那么怎么再让它运行呢？答案是它不能运行了。为了避免这种情况，就必须避免处于非TASK_RUNNING的进程被抢占的进程不被赶出运行队列，也就是下面的代码，schedule的代码：
+
+if (prev->state && !(preempt_count() & PREEMPT_ACTIVE)) {
+
+switch_count = &prev->nvcsw;
+
+if (unlikely((prev->state & TASK_INTERRUPTIBLE) && unlikely(signal_pending(prev))))
+
+prev->state = TASK_RUNNING;
+
+else {
+
+if (prev->state == TASK_UNINTERRUPTIBLE)
+
+rq->nr_uninterruptible++;
+
+deactivate_task(prev, rq);
+
+}
 
 #define preempt_count() (current_thread_info()->preempt_count)
 
@@ -486,3 +516,5 @@ O(1)是多队列调度器，每个处理器都有一条自己的运行队列
 
 1. [调度器](http://www.cnblogs.com/tolimit/p/4303052.html)
 2. http://blog.csdn.net/lsl180236/article/details/51155373
+3. http://blog.chinaunix.net/uid-27052262-id-3239260.html
+4. http://www.cnblogs.com/Nancy5104/p/5389990.html
