@@ -127,7 +127,7 @@ sched_init ---- FAIR_GROUP_SCHED
 
 ``` C
 #define cpu_rq(cpu)     (&per_cpu(runqueues, (cpu))) 	//返回指定CPU的运行队列指针.
-#define this_rq()       (&__get_cpu_var(runqueues))	//返回当前CPU的运行队列指针.	
+#define this_rq()       (&__get_cpu_var(runqueues))	//返回当前CPU的运行队列指针.
 #define task_rq(p)      cpu_rq(task_cpu(p))		//返回给定任务的运行队列.
 #define cpu_curr(cpu)       (cpu_rq(cpu)->curr)		//返回指定CPU的当前进程
 #define raw_rq()        (&__raw_get_cpu_var(runqueues))
@@ -248,7 +248,7 @@ struct task_struct {
     /* 表示是否在运行队列 */
     int on_rq;
 
-    /* 进程优先级 
+    /* 进程优先级
      * prio: 动态优先级，范围为100~139，与静态优先级和补偿(bonus)有关
      * static_prio: 静态优先级，static_prio = 100 + nice + 20 (nice值为-20~19,所以static_prio值为100~139)
      * normal_prio: 没有受优先级继承影响的常规优先级，具体见normal_prio函数，跟属于什么类型的进程有关
@@ -386,15 +386,15 @@ idle模式----swapper进程
 如果内核中的进程被阻塞了，或它显式地调用了schedule()，内核抢占也会显式地发生。这种形式的内核代码从来都是受支持的，因为根本无需额外的逻辑来保证内核可以安全地发生被抢占。如果代码显式的调用了schedule()，那么它应该清楚自己是可以安全地被抢占的。
 
 
-### 内核抢占发生在: 
+### 内核抢占发生在:
 
-1. 当"从中断处理程序"正在执行，且返回内核空间之前 
-2. 内核代码再一次具有可抢占性的时候 
-3. 如果内核中的任务显式的调用schedule() 
-4. 如果内核中的任务阻塞(这同样也会导致调用schedule()) 
+1. 当"从中断处理程序"正在执行，且返回内核空间之前
+2. 内核代码再一次具有可抢占性的时候
+3. 如果内核中的任务显式的调用schedule()
+4. 如果内核中的任务阻塞(这同样也会导致调用schedule())
 
 注:
-	current->threadinfo.flags中TIF_NEED_RESCHED为1，表示当前进程需要执行schedule()释放CPU控制权 
+	current->threadinfo.flags中TIF_NEED_RESCHED为1，表示当前进程需要执行schedule()释放CPU控制权
 	current->threadinfo.preemptcount的值不为0，表示当前进程持有锁不能释放CPU控制权(不能被抢占)
 
 ### preempt_count()
@@ -427,7 +427,7 @@ deactivate_task(prev, rq);
 #define preempt_count() (current_thread_info()->preempt_count)
 
 linux中mips架构使用寄存器28来指向当前进程的thread_info.相关代码:
-		
+
 /* How to get the thread information struct from C.  */
 static inline struct thread_info *current_thread_info(void)                        
 {
@@ -435,7 +435,7 @@ static inline struct thread_info *current_thread_info(void)
 
     return __current_thread_info;
 }
-arch/mips/include/asm/thread_info.h 
+arch/mips/include/asm/thread_info.h
 
 ## 进程内核栈
 
@@ -518,3 +518,4 @@ O(1)是多队列调度器，每个处理器都有一条自己的运行队列
 2. http://blog.csdn.net/lsl180236/article/details/51155373
 3. http://blog.chinaunix.net/uid-27052262-id-3239260.html
 4. http://www.cnblogs.com/Nancy5104/p/5389990.html
+5. [copy on write](http://blog.csdn.net/bysui/article/details/51842817)
