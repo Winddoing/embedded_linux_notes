@@ -1,5 +1,8 @@
 # 内核启动
 
+
+https://www.gitbook.com/book/codingbelief/linux-kernel-internals/details
+
 进入C语言部分
 
 ## 流程
@@ -116,4 +119,4 @@ USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root         1  0.0  0.0  33736  2024 ?        Ss    9月26   0:02 /sbin/init
 root         2  0.0  0.0      0     0 ?        S     9月26   0:01 [kthreadd]
 
-
+ps -eo state,uid,pid,ppid,rtprio,ni,time,comm
