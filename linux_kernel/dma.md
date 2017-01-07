@@ -151,20 +151,28 @@ struct scatterlist {
 #ifdef CONFIG_DEBUG_SG
     unsigned long   sg_magic;
 #endif
-    unsigned long   page_link;
-    unsigned int    offset;
-    unsigned int    length;
-    dma_addr_t  dma_address;
+    unsigned long   page_link;  //指明虚拟地址所对应的物理页面struct page对象的地址
+    unsigned int    offset;     //数据在DMA缓存区的偏移地址
+    unsigned int    length;     //传输的数据块大小
+    dma_addr_t  dma_address;    //设备DMA操作要使用的DMA地址(物理地址)
 #ifdef CONFIG_NEED_SG_DMA_LENGTH
     unsigned int    dma_length;
 #endif
 };
 ```
+*scatterlist操作接口:*
+
+``` C
+#define sg_dma_address(sg)  ((sg)->dma_address)              
+#define sg_dma_len(sg)      ((sg)->dma_length)
+```
 ### dma_map_sg
 
 原型:
- 
-    void dma_map_sg(struct device *dev, struct scatterlist *sg, int nents, enum dma_data_direction direction);   
+``` C 
+void dma_map_sg(struct device *dev, struct scatterlist *sg, 
+			int nents, enum dma_data_direction direction);   
+```
 
 * `dev`:设备对象指针
 * `sg`:struct scatterlist类型数组首地址
