@@ -1,11 +1,12 @@
+# DMA
 
-#一致性
+##一致性
 
 ## dma_alloc_coherent
 
 ## dma_free_coherent
 
-# 流式映射
+## 流式映射
 
 ## dma_map_single
 
