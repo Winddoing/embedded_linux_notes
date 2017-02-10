@@ -26,6 +26,4 @@
 ``` 
 66 ro.kernel.qemu=1
 67 ro.kernel.qemu.gles=0
-
-
 ```

@@ -58,3 +58,11 @@ cond(no)->sub->io
 文字两端使用2个“*”或者“_”夹起来
 
 将需要设置为斜体的文字两端使用1个“*”或者“_”夹起来
+
+## 图片
+
+``` 
+![Alt text](/path/to/img.jpg)
+
+![Alt text](/path/to/img.jpg "Optional title")
+```
