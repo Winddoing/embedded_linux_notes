@@ -203,6 +203,23 @@ int bus_register(struct bus_type *bus)
 int __class_register(struct class *cls, struct lock_class_key *key) 
 ```
 
+### Add driver
+
+``` C
+int driver_register(struct device_driver *drv) 
+{
+	
+    other = driver_find(drv->name, drv->bus);	//查看当前总线上是否已注册该名字设备
+   
+    ret = bus_add_driver(drv);					//添加该驱动到总线bus
+   
+    ret = driver_add_groups(drv, drv->groups);	//
+  
+    kobject_uevent(&drv->p->kobj, KOBJ_ADD);
+    return ret;
+}
+```
+
 ## 应用数据结构
 
 ### struct device
@@ -210,7 +227,8 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 ``` C
 struct device {
     struct device       *parent;    //该设备的父设备,可能是一个总线或设备,也可以不存在
-	...
+	struct device_private   *p;
+
     struct kobject kobj; 
     const struct device_type *type;
 
@@ -218,14 +236,66 @@ struct device {
 	
 	struct class        *class;    //The class of the device.
 	...
+
 }
+```
+
+``` C
+struct device_private {                                                  
+    struct klist klist_children;
+    struct klist_node knode_parent;
+    struct klist_node knode_driver;
+    struct klist_node knode_bus;
+    struct list_head deferred_probe;
+    void *driver_data;
+    struct device *device;
+};   
 ``` 
+>file: include/linux/device.h
+
+### struct device_driver
+
+``` C
+struct device_driver {             
+    const char      *name;
+    struct bus_type     *bus;	 //The bus which the device of this driver belongs to
+
+    struct module       *owner;  //The module owner.  
+    const char      *mod_name;  /* used for built-in modules */
+
+    bool suppress_bind_attrs;   /* disables bind/unbind via sysfs 是否允许驱动通过sysfs决定挂载还是卸载设备, 如mmc_test*/
+
+    const struct of_device_id   *of_match_table;
+    const struct acpi_device_id *acpi_match_table;
+
+    int (*probe) (struct device *dev);
+    int (*remove) (struct device *dev);
+    void (*shutdown) (struct device *dev);
+    int (*suspend) (struct device *dev, pm_message_t state);
+    int (*resume) (struct device *dev);
+    const struct attribute_group **groups;
+   
+    const struct dev_pm_ops *pm;
+   
+    struct driver_private *p;
+};
+```
+
+``` C
+struct driver_private {
+    struct kobject kobj;			//设备模型节点,在sys文件系统中代表driver目录
+    struct klist klist_devices;		//驱动的设备链表
+    struct klist_node knode_bus;	//挂载在总线上的驱动链表节点
+    struct module_kobject *mkobj;	//driver和module的联系
+    struct device_driver *driver;	//指回device_driver
+};
+```
 >file: include/linux/device.h
 
 ### struct bus_type
 
 ``` C
-struct bus_type {                                                                                     
+struct bus_type {
     const char      *name;
     const char      *dev_name;
     struct device       *dev_root;
@@ -268,6 +338,16 @@ struct class {
 ## 设备与驱动
 
 驱动为设备的软件逻辑,在内核中将设备和驱动分别抽象出两个结构体:`struct device`和`struct device_driver`
+
+### 驱动的匹配
+
+在进行驱动的加载时,需要将device和driver进行绑定,绑定成功后驱动才能拿到所需的数据.
+
+``` C
+
+```
+
+
 
 
 ## 附:
