@@ -125,7 +125,7 @@ struct kset {
 ```
 >file: include/linux/kobject.h
 
-kset是一组kobject的集合, 而每一个kobject具有不同的`type`
+kset是一组kobject的集合, 而每一个kobject具有不同的`type`, 它主要描述的是对象集合与集合之前的关系,侧重点在于集合.S
 
 ### struct kobject
 
@@ -147,6 +147,19 @@ struct kobject {
 ```
 >file: include/linux/kobject.h
 
+1. 对象的引用计数
+一个内核对象被创建时,不可能知道该对象的存活时间,跟踪此对象生命周期的一个方法是使用引用计数,当内核中没有代码持有该对象的引用时,该对象将结束自己的生命周期,并且被删除.
+操作:
+``` C
+struct kobject *kobject_get(struct kobject *kobj)
+void kobject_put(struct kobject *kobj)
+```
+
+2. 使用
+在内核中很少单独使用kobject对象,kobject通常被用于控制对`大型域`(domain)相关对象的访问.因此,一般都是将kobject`嵌入`到其他的数据结构中.
+>这里我们可以通过面向对象的思维去理解这一行为,kobject可以被认为时最顶层的基类,其他类读是它的派生产物.此时,可以将kobject`嵌入`到其他的数据结构中,理解为其他数据结构`继承`了kobject.
+
+
 ### struct kobj_type
 
 ``` C
@@ -160,7 +173,36 @@ struct kobj_type {
 ```
 >file: include/linux/kobject.h
 
-kobject的属性操作集合.
+kobject的属性操作集合.它描述的重点是对象的类型,侧重点在于单个对象.
+
+
+### 属性
+
+``` C
+struct attribute {                                           
+    const char      *name;	//在kobject的sysfs目录中显示
+    umode_t         mode;	//应用与属性的保护位
+};
+```
+>file:include/linux/sysfs.h
+
+| mode | 描述 |
+| ---- | ---- |
+| S_IRUGO | 只读 |
+| S_IWUSR | 可写 |
+详细描述:include/linux/stat.h 
+
+## 操作
+
+``` C
+struct sysfs_ops {                                                                       
+    ssize_t (*show)(struct kobject *, struct attribute *,char *); 
+    ssize_t (*store)(struct kobject *,struct attribute *,const char *, size_t);
+    const void *(*namespace)(struct kobject *, const struct attribute *);
+};
+```
+>file: include/linux/sysfs.h
+
 
 ### 关系与总结
 
@@ -335,6 +377,25 @@ struct class {
 ```
 >file: include/linux/device.h
 
+### 设备属性
+
+``` C
+struct device_attribute {                                                                 
+    struct attribute    attr;
+    ssize_t (*show)(struct device *dev, struct device_attribute *attr,
+            char *buf);
+    ssize_t (*store)(struct device *dev, struct device_attribute *attr,
+             const char *buf, size_t count);
+};
+```
+这两个接口主要实现了sys文件系统下,对相关属性节点的读写操作,即`echo` 和 `cat`
+
+驱动中的应用接口:
+``` C
+#define DEVICE_ATTR(_name, _mode, _show, _store) \                                         
+    struct device_attribute dev_attr_##_name = __ATTR(_name, _mode, _show, _store)
+```
+
 ## 设备与驱动
 
 驱动为设备的软件逻辑,在内核中将设备和驱动分别抽象出两个结构体:`struct device`和`struct device_driver`
@@ -344,9 +405,33 @@ struct class {
 在进行驱动的加载时,需要将device和driver进行绑定,绑定成功后驱动才能拿到所需的数据.
 
 ``` C
+static int __init test_init(void)
+{
+	int error;
 
+    error = platform_driver_register(&driver);	//注册驱动                            
+	...
+    platform_device_register(&device);			//注册设备
+	...
+    return error;
+}
+```
+在设备或驱动最后注册完成时,设备模型将通过platform总线进行二者的匹配,匹配成功后将执行驱动的接口函数`probe`.
+``` C
+/** 
+ * bus_probe_device - probe drivers for a new device
+ * @dev: device to probe                                                                    
+ *  
+ * - Automatically probe for a driver if the bus allows it.
+ */ 
+void bus_probe_device(struct device *dev)
 ```
 
+## 热插拔事件
+
+当系统配置出现变化时,从内核空间发送到用户空间的通知,为热插拔事件
+
+>无论kobject被创建还是被删除,都会产生热插拔事件
 
 
 
