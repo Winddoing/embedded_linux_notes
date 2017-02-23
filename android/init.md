@@ -109,6 +109,26 @@ parser.ParseConfig("/init.rc");
 android中的属性服务是全局性的,同样由Key--Value构成.
 
 在系统中运行的所有进程都可以访问属性值,但是不行修改,所有的修改都由init完成.
+
+## 开机后执行脚本
+
+### 添加Service
+
+``` shell
+service android_reboot_test /system/bin/reboot_test.sh               
+        user root
+        group root
+        disabled
+```
+### 添加Action
+``` shell
+on property:sys.boot_completed=1     #系统启动完成后,启动android_reboot_test服务   
+        start android_reboot_test
+```
+### 原理:
+
+
+
 ## 其他
 
 不了解

@@ -20,4 +20,11 @@ mount -o rw,remount -t ext4 /dev/block/platform/driver_name/by-name/system /syst
 >23452 --> 异常PC
 
 
+## 手动开启服务
+
+``` shell
+start <service name>
+```
+
+
 
