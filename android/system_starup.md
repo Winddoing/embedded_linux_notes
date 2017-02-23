@@ -14,7 +14,7 @@ set bootargs root=/dev/nfs rwnfsroot=192.168.1.14:/nfsboot/root ip=192.168.1.20:
 
 ### 启动过程
 
-![启动流程](android/images/android_boot_sequence.png)
+![启动流程](images/android_boot_sequence.png)
 
 Android系统完整的启动过程，可分为Linux系统层、Android系统服务层、Zygote进程模型三个阶段，从开机到启动Home Launcher完成具体的任务细节可分为七个步骤。
 
