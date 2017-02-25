@@ -1,0 +1,316 @@
+前言：
+上一节中借助"切入点"， 系统调用open的实现流程
+对alsa框架的成员，和要实现的函数接口有了直观的认识
+这一节中介绍框架的成员， 和绑定的关系
+
+
+上一节， 完全是alsa框架相关
+文件位于  sound/soc/ *.c ，sound/core	
+属于"通用代码"，侧重讲述原理 
+
+这一节， 是君正实现的绑定注册与操作接口
+文件位于  soc/ingenic
+属于"君正代码"，侧重讲述匹配的方法
+
+
+
+
+
+
+一. alsa框架的四个成员功能介绍
+card， cpu， codec， platform
+
+1. card
+   ingenic/asoc-board/phoenix_icdc.c
+   实现"环境"相关的操作---->gpio， clk
+ 
+
+2. cpu
+   ingenic/asoc-v12/asoc-i2s-v12.c
+   实现"音频数据处理器"相关的操作----->Baic
+
+
+3. codec
+   ingenic/icodec/icdc_d3.c
+   实现"音频数据播放器"相关的操作------>codec
+
+
+4. platform
+   ingenic/asoc-v12/asoc-dma-v12.c
+   实现"音频传输"相关的操作-------->Dma
+
+
+
+
+
+
+
+二. alsa四个部分间绑定的依据
+1. card端---ingenic/asoc-board/phoenix_icdc.c
+
+（1） 掌管匹配"名牌"的结构体
+static struct snd_soc_dai_link phoenix_dais[] = {
+	[0] = {
+		.name = "phoenix ICDC",
+		.stream_name = "phoenix ICDC",
+		.platform_name = "jz-asoc-aic-dma",      //platform匹配项
+		.cpu_dai_name = "jz-asoc-aic-i2s",       //cpu匹配项
+		.init = phoenix_dlv_dai_link_init,
+		.codec_dai_name = "icdc-d3-hifi",         //codec匹配项1
+		.codec_name = "icdc-d3",                  //codec匹配项2
+
+		.ops = &phoenix_i2s_ops, //  
+	},
+}
+
+
+（2） 注册
+static struct snd_soc_card phoenix = {
+	.name = "phoenix",
+	.owner = THIS_MODULE,
+	.dai_link = phoenix_dais,
+	.num_links = ARRAY_SIZE(phoenix_dais),
+};
+
+	ret = snd_soc_register_card(&phoenix);
+
+
+
+
+
+
+2.  codec--->ingenic/icodec/icdc_wm8594.c
+static struct snd_soc_dai_driver  icdc_d3_codec_dai = {
+	.name = "icdc-d3-hifi",        
+	.ops = &icdc_d3_dai_ops,    //codec_dai->driver->ops
+};
+
+
+static struct snd_soc_codec_driver soc_codec_dev_icdc_d3_codec = {
+}
+
+snd_soc_register_codec(&pdev->dev,
+         &soc_codec_dev_icdc_d3_codec, &icdc_d3_codec_dai, 1);
+
+
+（1）注册函数
+soc/soc-core.c
+int snd_soc_register_codec(struct device *dev,
+			   const struct snd_soc_codec_driver *codec_drv,
+			   struct snd_soc_dai_driver *dai_drv,
+			   int num_dai)
+{
+	struct snd_soc_codec *codec;
+	codec->name = fmt_single_name(dev, &codec->id);
+}
+
+注意dev->driver->name = "icdc_d3"
+注意dev->driver->id = -1
+生成codec->name = "icdc_d3"  //codec匹配项2
+
+//注意dev->driver->id = 0
+//会生成codec->name = "icdc_d3.0"
+
+
+
+
+
+
+
+3. cpu ------> ingenic/asoc-v12/asoc-i2s-v12.c
+static const struct snd_soc_component_driver jz_i2s_component = {
+	.name		= "jz-i2s",
+};
+
+static struct snd_soc_dai_driver jz_i2s_dai = {
+		.ops = &jz_i2s_dai_ops,    //实现 cpu_dai->driver->ops
+};
+
+
+	ret = snd_soc_register_component(&pdev->dev, &jz_i2s_component,
+					&jz_i2s_dai, 1);
+
+
+
+（1） 注册函数
+soc/soc-core.c
+int snd_soc_register_component(struct device *dev,
+			 const struct snd_soc_component_driver *cmpnt_drv,
+			 struct snd_soc_dai_driver *dai_drv,
+			 int num_dai)
+{
+	struct snd_soc_component *cmpnt;
+	cmpnt->name = fmt_single_name(dev, &cmpnt->id);
+
+}
+
+与card端同样的道理
+注意dev->driver->name = "jz-asoc-aic-i2s"
+注意dev->driver->id = -1
+生成cmpnt->name = "jz-asoc-aic-i2s"  //codec匹配项2
+
+
+
+
+4. platform------->ingenic/asoc-v12/asoc-dma-v12.c
+
+static struct snd_soc_platform_driver jz_pcm_platform = {
+	.ops            = &jz_pcm_ops,   //实现 platform->driver->ops
+};
+
+	ret = snd_soc_register_platform(&pdev->dev, &jz_pcm_platform);
+
+
+
+
+
+
+
+
+三. alsa四个部分接口函数的实现 ----- 这部分叙述数据传输"准备部分"的指令
+				    "传输部分"待下一节叙述
+//驱动的接口函数，是提供给用户层调用
+//要理解alsa四个部分接口函数应该实现的功能
+//就要事先理解用户层的应用程序Aplay
+
+//下面安装aplay调用的顺序介绍
+1. open
+
+（1） 应用层system_call
+（2） 内核响应
+ soc/soc-pcm.c
+static int soc_pcm_open(struct snd_pcm_substream *substream)
+{
+
+		ret = cpu_dai->driver->ops->startup(substream, cpu_dai);
+
+		ret = platform->driver->ops->open(substream);
+ 
+		ret = codec_dai->driver->ops->startup(substream, codec_dai);
+
+		ret = rtd->dai_link->ops->startup(substream);
+}
+
+
+
+
+2. hw_params------------>设置参数
+（1） 应用层system_call
+./src/pcm/pcm_hw.c
+ioctl(pcm_hw->fd, SNDRV_PCM_IOCTL_HW_PARAMS, params)
+//命令号 ------ SNDRV_PCM_IOCTL_HW_PARAMS = _IOWR('A', 0x11, struct sndrv_pcm_hw_params)
+//实际上，没有必要对”幻数“”基数“， 用户层内核层，命令号名字都是一样的
+//但毕竟用户层内核层，依靠”幻数“”基数“转换的32bit数， 匹配，跟一下去去疑
+
+
+
+（2） 内核响应
+soc/soc-pcm.c-----接口分发程序
+//rtd->ops.hw_params	= soc_pcm_hw_params;
+//substream->ops->hw_params = soc_pcm_hw_params
+static int soc_pcm_hw_params(struct snd_pcm_substream *substream,
+				struct snd_pcm_hw_params *params)
+{
+	ret = rtd->dai_link->ops->hw_params(substream, params);
+	ret = codec_dai->driver->ops->hw_params(substream, params, codec_dai);
+	ret = cpu_dai->driver->ops->hw_params(substream, params, cpu_dai);
+	ret = platform->driver->ops->hw_params(substream, params);
+}
+
+
+		
+core/pcm_native.c-----ioctl处理函数 
+#define SNDRV_PCM_IOCTL_HW_PARAMS	_IOWR('A', 0x11, struct snd_pcm_hw_params)
+static int snd_pcm_common_ioctl1(struct file *file,
+				 struct snd_pcm_substream *substream,
+				 unsigned int cmd, void __user *arg)
+{
+	switch (cmd) {
+	case SNDRV_PCM_IOCTL_HW_PARAMS:
+		return snd_pcm_hw_params_user(substream, arg);
+
+	}
+}
+
+static int snd_pcm_hw_params_user(struct snd_pcm_substream *substream,
+				  struct snd_pcm_hw_params __user * _params)
+{
+	err = snd_pcm_hw_params(substream, params);
+}
+
+
+static int snd_pcm_hw_params(struct snd_pcm_substream *substream,
+			     struct snd_pcm_hw_params *params)
+{
+	substream->ops->hw_params(substream, params);  //调用接口分发程序
+}
+
+
+
+3. prepare--------->enable
+（1）应用层system_call
+
+
+
+（2）内核响应
+soc/soc-pcm.c-----接口分发程序
+//rtd->ops.prepare        = soc_pcm_prepare
+//substream->ops->prepare        = soc_pcm_prepare
+static int soc_pcm_prepare(struct snd_pcm_substream *substream)
+{
+
+	ret = rtd->dai_link->ops->prepare(substream);
+	ret = platform->driver->ops->prepare(substream);
+	ret = codec_dai->driver->ops->prepare(substream, codec_dai);
+	ret = cpu_dai->driver->ops->prepare(substream, cpu_dai);
+
+}
+
+
+core/pcm_native.c-----ioctl处理函数
+static int snd_pcm_common_ioctl1(struct file *file,
+				 struct snd_pcm_substream *substream,
+				 unsigned int cmd, void __user *arg)
+{
+	switch (cmd) {
+ 
+	case SNDRV_PCM_IOCTL_PREPARE:
+		return snd_pcm_prepare(substream, file);
+
+}
+
+
+static int snd_pcm_prepare(struct snd_pcm_substream *substream,
+			   struct file *file)
+{
+	snd_pcm_action_nonatomic(&snd_pcm_action_prepare,
+			substream, f_flags);
+	//调用snd_pcm_action_prepare->pre_action
+}
+
+
+
+static struct action_ops snd_pcm_action_prepare = {
+	.pre_action = snd_pcm_pre_prepare,
+	.do_action = snd_pcm_do_prepare,
+	.post_action = snd_pcm_post_prepare
+};
+
+static int snd_pcm_do_prepare(struct snd_pcm_substream *substream, int state)
+{
+	err = substream->ops->prepare(substream);
+}
+
+
+
+
+
+四. 总结
+这一节讲述内容： 希望有助于同事搭建alsa驱动，实现相应fops
+                讲述fops各个成员， 应用层的调用， 可以看清aplay，alsa实现的接口很多
+                相同的功能可以使用不同的接口组合来实现
+		希望有助于梳理思路
+
+
+
+

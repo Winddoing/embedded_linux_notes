@@ -1,0 +1,170 @@
+前言：
+前两节讲述了alsa驱动框架， 及其各部分匹配构建
+这一节， 着重讲述Aplay，alsa内核之间的数据传输
+
+
+一. 应用程序aplay播放过程解析
+//shell执行命令  aplay xp.wav
+//xp.wav(xp启动音乐) : size = 1361120 (char)
+
+1.  external/alsa-utils/aplay/aplay.c
+int main(int argc, char *argv[])
+{
+//fds = open("xp.wav") 
+//open("/dev/snd/pcmC0D0p")， 
+	playbackv(&argv[optind], argc - optind);
+}
+
+
+2.  external/alsa-utils/aplay/aplay.c
+static void playbackv(char **names, unsigned int count)
+{
+//解读"xp.wav"头44bit文件, 解读出文件"大小，分辨率，位宽"
+//更改驱动参数--"分辨率， 位宽"
+	playbackv_go(fds, channels, 0, pbrec_count, FORMAT_RAW, names);
+
+}
+
+
+3.  external/alsa-utils/aplay/aplay.c
+static void playbackv_go(int* fds, unsigned int channels, size_t loaded, off64_t count, int rtype, char **names)
+{
+	while (count > 0) {		//count = 1361120 - 44
+
+		safe_read(fds[channel], bufs[channel], r);
+			//每次循环读取8192个数据
+		r = pcm_writev(bufs, channels, c);
+
+	}
+}
+
+
+4.  external/alsa-utils/aplay/aplay.c
+static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
+{
+	while (count > 0) {           //count = 8192 = 0x2000
+		r = writen_func(handle, bufs, count);
+				      //alsa驱动有threshold设置， 8192没办法一次写下去
+				      //每次写2048 = 0x800
+				      //直到写完为止	
+	}
+}
+
+
+//可见，在整个歌曲播放过程，只有writen_func
+
+
+二. writen_func实现
+1.  external/alsa-utils/aplay/aplay.c
+	if (mmap_flag) {                  //mmap_flag = 0，使用copy模式
+		writei_func = snd_pcm_mmap_writei;
+	} else {
+		writei_func = snd_pcm_writei;
+	}
+
+
+2.  external/alsa-lib/src/pcm/pcm.c
+snd_pcm_sframes_t snd_pcm_writei(snd_pcm_t *pcm, const void *buffer, snd_pcm_uframes_t size)
+{
+	return _snd_pcm_writei(pcm, buffer, size);
+                 //调用pcm->fast_ops->writei(pcm->fast_op_arg, buffer, size);
+ 
+}
+
+
+
+3.  src/pcm/pcm_hw.c
+static const snd_pcm_fast_ops_t snd_pcm_hw_fast_ops = {
+	.writei = snd_pcm_hw_writei,
+}
+
+
+static snd_pcm_sframes_t snd_pcm_hw_writei(snd_pcm_t *pcm, const void *buffer, snd_pcm_uframes_t size)
+{
+
+	struct sndrv_xferi xferi;
+	xferi.buf = (char*) buffer;   //数据地址
+	xferi.frames = size;          //数据长度
+	xferi.result = 0;
+	err = ioctl(fd, SNDRV_PCM_IOCTL_WRITEI_FRAMES, &xferi);
+				//系统调用
+	return xferi.result;
+}
+
+
+
+三. 系统调用:ioctl(,SNDRV_PCM_IOCTL_WRITEI_FRAMES,)过程解析
+1.  sound/core/pcm_native.c
+从/dev/snd/pcmC0D0p开始跟起
+const struct file_operations snd_pcm_f_ops[2] = {
+	{
+		.unlocked_ioctl =	snd_pcm_playback_ioctl,
+	},
+}
+
+static long snd_pcm_playback_ioctl(struct file *file, unsigned int cmd,
+				   unsigned long arg)
+{
+//判断cmd幻数是否正确
+	return snd_pcm_playback_ioctl1(file, pcm_file->substream, cmd,
+				       (void __user *)arg);
+}
+
+
+static int snd_pcm_playback_ioctl1(struct file *file,
+				   struct snd_pcm_substream *substream,
+				   unsigned int cmd, void __user *arg)
+{
+	switch (cmd) {
+		case SNDRV_PCM_IOCTL_WRITEI_FRAMES:
+		{
+			struct snd_xferi xferi;
+			result = snd_pcm_lib_write(substream, xferi.buf, xferi.frames);
+		}
+	}
+
+}
+
+
+2.   sound/core/pcm_lib.c
+snd_pcm_sframes_t snd_pcm_lib_write(struct snd_pcm_substream *substream, const void __user *buf, snd_pcm_uframes_t size)
+{
+	return snd_pcm_lib_write1(substream, (unsigned long)buf, size, nonblock,
+				  snd_pcm_lib_write_transfer);
+}
+
+
+static snd_pcm_sframes_t snd_pcm_lib_write1(struct snd_pcm_substream *substream, 
+					    unsigned long data,
+					    snd_pcm_uframes_t size,
+					    int nonblock,
+					    transfer_f transfer)
+{
+  （1）
+	avail = snd_pcm_playback_avail(runtime);
+
+	while (size > 0) {
+		if (!avail) {
+  （2）
+			err = wait_for_avail(substream, &avail);
+		}
+
+  （3）
+		err = transfer(substream, appl_ofs, data, offset, frames);
+
+  （4）
+		if (runtime->status->state == SNDRV_PCM_STATE_PREPARED &&
+		    snd_pcm_playback_hw_avail(runtime) >= (snd_pcm_sframes_t)runtime->start_threshold) {
+			err = snd_pcm_start(substream);
+	
+		}
+	}
+ 
+}
+
+//	avail = snd_pcm_playback_avail(runtime);
+//snd_pcm_sframes_t snd_pcm_lib_write1是相应系统调用的主要流程
+
+
+
+

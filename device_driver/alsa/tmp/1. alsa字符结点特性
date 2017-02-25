@@ -1,0 +1,293 @@
+引言：
+alsa驱动属于字符类设备
+内核会绑定MKdev， fops， private_data
+用户层调用会使用open， ioctl， read/write， close等系统调用
+
+
+驱动框架在注册过程中（往往发生在起kernel的阶段）建立绑定各个部分。
+open函数（发生在注册之后）只需要通过struct inode *inode参数，
+拿去到架构中某一成员的指针，就可以以此为“切入点”， 访问整个架构！
+
+
+
+本节以alsa， open函数为入口，找寻alsa框架的“切入点”！
+同时通过这个“切入点”， 可以大致清晰的了解alsa架构，
+使得下一节中讲述alsa框架各个成员注册绑定打下基础。
+
+
+
+一.  alsa框架注册后的结点 
+/dev/snd/pcmC0D0p  （116,16）    //playback  
+/dev/snd/pcmC0D0c  （116,24）    //capture（record）
+/dev/snd/controlC0  （116,0）    //这一节不设及这部分内容
+
+
+
+
+
+二.  字符类结点注册
+1. /core/pcm.c
+static int snd_pcm_dev_register(struct snd_device *device)
+{
+	struct snd_pcm *pcm;
+	for (cidx = 0; cidx < 2; cidx++) {
+		switch (cidx) {
+		case SNDRV_PCM_STREAM_PLAYBACK:
+			sprintf(str, "pcmC%iD%ip", pcm->card->number, pcm->device);
+			devtype = SNDRV_DEVICE_TYPE_PCM_PLAYBACK;
+			break;
+		case SNDRV_PCM_STREAM_CAPTURE:
+			sprintf(str, "pcmC%iD%ic", pcm->card->number, pcm->device);
+			devtype = SNDRV_DEVICE_TYPE_PCM_CAPTURE;
+			break;
+		}
+		err = snd_register_device_for_dev(devtype, pcm->card,
+						  pcm->device,
+						  &snd_pcm_f_ops[cidx],
+						  pcm, str, dev);
+
+	}
+}
+
+注意： 注册函数snd_register_device_for_dev（）调用了两次
+第一次：
+	snd_register_device_for_dev(SNDRV_DEVICE_TYPE_PCM_PLAYBACK,  
+ 				    pcm->card,
+				    pcm->device,
+				    &snd_pcm_f_ops[0],     //fops
+				    pcm,                   //private_data, ”切入点“
+                                    "pcmC0D0p",            //dev/snd/pcmC0D0p
+                                    dev);
+
+
+
+第二次：
+	snd_register_device_for_dev(SNDRV_PCM_STREAM_CAPTURE,  
+ 				    pcm->card,             //pcm两次是不变的
+				    pcm->device,
+				    &snd_pcm_f_ops[1],     //core/pcm_native.c文件中
+				    pcm, 
+                                    "pcmC0D0c",  
+                                    dev);                   //注册成功的返回struct device *device
+
+
+
+
+2.  core/sound.c
+int snd_register_device_for_dev(int type, struct snd_card *card, int dev,
+				const struct file_operations *f_ops,
+				void *private_data,
+				const char *name, struct device *device)
+{
+	int minor;
+	struct snd_minor *preg;
+	preg->type = type;
+	preg->f_ops = f_ops;
+	preg->private_data = private_data;
+	snd_minors[minor] = preg;
+
+	preg->dev = device_create(sound_class, device, MKDEV(major, minor),
+                                  private_data, "%s", name);
+
+}
+
+第一次:
+ 	minor = 16;	
+	preg->type = SNDRV_DEVICE_TYPE_PCM_PLAYBACK;
+	preg->f_ops = &snd_pcm_f_ops[0];
+	preg->private_data = pcm;
+	snd_minors[16] = preg;
+	preg->dev = device_create(sound_class, device, MKDEV(116, 16),
+                                  pcm, "%s", "pcmC0D0p");
+
+
+第二次：
+ 	minor = 24;	
+	preg->type = SNDRV_DEVICE_TYPE_PCM_CAPTURE;
+	preg->f_ops = &snd_pcm_f_ops[1];
+	preg->private_data = pcm;
+	snd_minors[16] = preg;
+	preg->dev = device_create(sound_class, device, MKDEV(116, 24),
+                                  pcm, "%s", "pcmC0D0c");
+
+
+
+分析：
+以第一次为例， 建立了 "/dev/snd/pcmC0D0p"-->（116,16）的对应关系
+系统调用两种找寻到切入点（struct snd_pcm *pcm）的方法
+（1） struct inode *inode ---> struct device *device--> void *private_data
+（2） struct inode *inode ---> int minor--> struct snd_minor preg[]--->void *private_data
+//alsa驱动使用的是第二种方法
+
+
+
+
+三. 系统调用open
+1. 用户层调用open（"/dev/snd/pcmC0D0p"）自然调用到
+./core/pcm_native.c
+const struct file_operations snd_pcm_f_ops[2] = {
+        {                                
+                .open =                 snd_pcm_playback_open,
+	}
+}
+
+
+2. ./core/pcm_native.c
+static int snd_pcm_playback_open(struct inode *inode, struct file *file)
+{
+	struct snd_pcm *pcm;
+	pcm = snd_lookup_minor_data(iminor(inode),
+				    SNDRV_DEVICE_TYPE_PCM_PLAYBACK);
+	err = snd_pcm_open(file, pcm, SNDRV_PCM_STREAM_PLAYBACK);
+
+	return err;
+}
+//使用方法二， 找到框架"切入点"-->struct snd_pcm *pcm;
+//继续下一级处理， 加入SNDRV_PCM_STREAM_PLAYBACK操作
+
+
+//下面的内容就是， 通过这个”切入点“，open的流程来一览alsa驱动的全貌！！！！！！
+
+3. ./core/pcm_native.c
+static int snd_pcm_open(struct file *file, struct snd_pcm *pcm, int stream)
+{
+		err = snd_pcm_open_file(file, pcm, stream);
+
+}
+
+4. ./core/pcm_native.c
+static int snd_pcm_open_file(struct file *file,
+			     struct snd_pcm *pcm,
+			     int stream)
+{
+	err = snd_pcm_open_substream(pcm, stream, file, &substream);
+	return 0;
+}
+
+
+5. ./core/pcm_native.c
+int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,       //SNDRV_PCM_STREAM_PLAYBACK
+			   struct file *file,
+			   struct snd_pcm_substream **rsubstream)
+{
+	struct snd_pcm_substream *substream = pcm->streams[stream].substream;
+
+	err = substream->ops->open(substream);  //框架分发程序
+	return 0； 
+}
+
+//文章中包含核心思想的文字， 称为“文眼”
+//驱动框架， 为驱动开发者提供可操作的接口， 是其重要的性质
+//框架调用这些接口的“代码”对于驱动开发者重要性，使这段“代码”在驱动开发者看来， 无疑于“框架文眼”
+
+
+
+
+
+四. alsa驱动接口
+substream->ops->open(substream)一定不是alsa驱动给驱动开发者提供的直接接口
+因为以kernel的严禁性
+如果这是个接口函数， 它一定是有判断的   //基本上也是驱动接口的判断标志了 
+(1) 
+if(substream->ops->open)    
+	substream->ops->open(substream);
+
+(2)
+if(substream->ops->open != 默认函数)    
+	substream->ops->open(substream);
+else
+	默认函数
+
+以防驱动开发者没有实现这个接口， 造成kernel"飞掉"
+
+但substream->ops->open(substream)离"alsa驱动接口"很近了
+
+
+1.  substream->ops到底调用了谁
+./soc/soc-pcm.c
+（1）
+int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
+{
+		rtd->ops.open		= soc_pcm_open;
+		snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK, &rtd->ops);
+		snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_CAPTURE, &rtd->ops);
+
+}
+
+
+（2）
+void snd_pcm_set_ops(struct snd_pcm *pcm, int direction, struct snd_pcm_ops *ops)
+{
+	struct snd_pcm_str *stream = &pcm->streams[direction];
+	struct snd_pcm_substream *substream;
+
+	for (substream = stream->substream; substream != NULL; substream = substream->next)
+		substream->ops = ops;
+}
+
+相当于
+	pcm->streams[SNDRV_PCM_STREAM_PLAYBACK]->substream->ops = rtd->ops = soc_pcm_open
+	pcm->streams[SNDRV_PCM_STREAM_CAPTURE]->substream->ops = rtd->ops = soc_pcm_open
+
+
+
+
+2.  "alsa框架文眼"
+soc/soc-pcm.c
+
+static int soc_pcm_open(struct snd_pcm_substream *substream)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_platform *platform = rtd->platform;
+	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	int ret = 0;
+        if (cpu_dai->driver->ops->startup) 
+		ret = cpu_dai->driver->ops->startup(substream, cpu_dai);
+
+	if (platform->driver->ops && platform->driver->ops->open)
+		ret = platform->driver->ops->open(substream);
+
+	if (codec_dai->driver->ops->startup) 
+		ret = codec_dai->driver->ops->startup(substream, codec_dai);
+
+	if (rtd->dai_link->ops && rtd->dai_link->ops->startup)
+		ret = rtd->dai_link->ops->startup(substream);
+}
+
+ 
+
+
+五. alsa框架"猜测总结"
+
+1. 
+	pcm ---> streams[SNDRV_PCM_STREAM_PLAYBACK]->substream--->rtd ---->platform---->fops
+							          rtd ---->cpu_dai----->fops		
+							          rtd ---->codec_dai--->fops
+							          rtd ---->fops
+
+	pcm ---> streams[SNDRV_PCM_STREAM_CAPTURE]-->substream--->rtd ---->platform---->fops
+							          rtd ---->cpu_dai----->fops		
+							          rtd ---->codec_dai--->fops
+							          rtd ---->fops
+
+open("/dev/snd/pcmC0D0p"), 找到pcm， 传递SNDRV_PCM_STREAM_PLAYBACK
+			   则找到pcm ---> streams[SNDRV_PCM_STREAM_PLAYBACK]
+
+open("/dev/snd/pcmC0D0c"),  找到pcm， 传递SNDRV_PCM_STREAM_CAPTURE
+			   则找到pcm ---> streams[SNDRV_PCM_STREAM_CAPTURE]
+
+
+
+2.  结论
+已经看出了alsa的"四个成员"（card， platform， codec， cpu）
+也看出了"四个成员"实现的fops
+则我们下一步就要讲述注册构建这四个部分！！！实现四个部分的fops！！！！
+
+
+
+
+
+
+
+
