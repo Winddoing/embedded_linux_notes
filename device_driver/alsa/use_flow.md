@@ -35,6 +35,5 @@ snd_soc_register_card --> snd_soc_instantiate_card --> snd_card_register --> snd
 
 
 
-
 ## dapm
 动态音频电源管理(Dynamic Audio Power Management)
