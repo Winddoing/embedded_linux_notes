@@ -142,7 +142,7 @@ This is father, his count is: 1 (0x7ffe19987d04), his pid is: 4066, son exit sta
 int *a;
 *a = 3;
 ```
-测试结果：
+x86测试结果：
 ``` shell
 =====>$./a.out
 pid=4500
@@ -152,7 +152,15 @@ This is father, his count is: 1 (0x7fff54e86d1c), his pid is: 4499, son exit sta
 ```
 此时子进程的`退出码=8`，而`signal=b`
 
-#### 信号
+mips下测试:
+``` shell
+# a.out 
+pid=109
+pid=0
+This is son, his count is: 2 (0x7f85e578). and his pid is: 109
+This is father, his count is: 1 (0x7f85e578), his pid is: 108, son exit status: 11[0000000b]
+```
+### 信号
 
 linux内核中x86的信号列表：
 ``` C
@@ -181,6 +189,52 @@ mips架构下的信号列表：
 #define SIGTERM     15  /* Termination (ANSI).  */
 ```
 >arch/mips/include/uapi/asm/signal.h
+
+## 遗留问题
+
+### 段错误时的系统调用
+
+mips下:
+
+``` shell
+# strace a.out > a.txt
+execve("/bin/a.out", ["a.out"], [/* 17 vars */]) = 0
+brk(0)                                  = 0x411000
+old_mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7793d000
+uname({sys="Linux", node="buildroot", ...}) = 0
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat64(3, {st_mode=S_IFREG|0664, st_size=2812, ...}) = 0
+old_mmap(NULL, 2812, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7793c000
+close(3)                                = 0
+open("/lib/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\10\0\1\0\0\0\244\247\1\0004\0\0\0"..., 512) = 512
+lseek(3, 700, SEEK_SET)                 = 700
+read(3, "\4\0\0\0\20\0\0\0\1\0\0\0GNU\0\0\0\0\0\2\0\0\0\6\0\0\0\f\0\0\0", 32) = 32
+fstat64(3, {st_mode=S_IFREG|0775, st_size=1552564, ...}) = 0
+old_mmap(NULL, 1531744, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x77798000
+mprotect(0x778f6000, 65536, PROT_NONE)  = 0
+old_mmap(0x77906000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x15e000) = 0x77906000
+old_mmap(0x7790c000, 8032, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7790c000
+close(3)                                = 0
+old_mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7793b000
+set_thread_area(0x77942490)             = 0
+mprotect(0x77906000, 12288, PROT_READ)  = 0
+mprotect(0x7793e000, 4096, PROT_READ)   = 0
+munmap(0x7793c000, 2812)                = 0
+clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7793b068) = 137
+fstat64(1, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+old_mmap(NULL, 65536, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x77788000
+wait4(-1, [{WIFSIGNALED(s) && WTERMSIG(s) == SIGSEGV}], 0, NULL) = 137
+--- SIGCHLD (Child exited) @ 0 (0) ---
+getpid()                                = 136
+write(1, "pid=137\nThis is father, his coun"..., 101) = 101
+exit_group(0)                           = ?
+
+```
+
+此时没有调用exit系统调用,
+
 
 ## 参考：
 
