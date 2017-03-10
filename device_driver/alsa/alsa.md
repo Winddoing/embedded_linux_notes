@@ -80,3 +80,4 @@ card->instantiated = 0;   //卡是否实例化
 
 1. [ Linux ALSA声卡驱动](http://blog.csdn.net/droidphone/article/details/6271122)
 2. [ALSA框架](http://www.360doc.com/content/12/0731/17/10388890_227508444.shtml)
+3. [alsa架构音频分析总结](http://blog.csdn.net/shen924/article/details/8775352)

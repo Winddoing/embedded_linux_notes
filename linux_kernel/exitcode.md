@@ -236,6 +236,28 @@ exit_group(0)                           = ?
 此时没有调用exit系统调用,
 
 
+
+## [    1.410463] Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
+
+内核行为
+
+```
+[    1.609570] do_exit arg code=0000000b, func: do_exit, line: 713
+[    1.609672] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G      D      3.10.14-00090-ga1516f4-dirty #115
+[    1.610938] Stack : 805633ca 00000056 80500000 80500000 00000001 8c290010 8c048220 805004e7
+[    1.610938]    804845f0 00000000 00000001 80562b60 00000000 00000001 8051d234 803cae10
+[    1.610938]    00000000 800367a4 00000002 00000000 804860fc 8c0377ec 8c0377ec 8c048220
+[    1.610938]    00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[    1.610938]    00000000 00000000 00000000 00000000 00000000 00000000 00000000 8c037780
+[    1.610938]    ...
+[    1.610969] Call Trace:
+[    1.611065] [<8001cb48>] show_stack+0x48/0x70
+[    1.611190] [<8003b814>] do_exit+0x58/0x8c4
+[    1.611276] [<8001cd38>] default_cu2_call+0x0/0x48
+[    1.611303] 
+[    1.611705] Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
+
+```
 ## 参考：
 
 1. [ linux子进程退出状态值解析：waitpid() status意义解析](http://blog.csdn.net/eqiang8271/article/details/8225468)
