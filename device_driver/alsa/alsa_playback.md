@@ -728,7 +728,7 @@ snd_pcm_action
   |-> snd_pcm_action_single
 	|
 	|-> ops->pre_action(substream, state);		//1. 准备
-    |-> ops->do_action(substream, state);       //2. 执行
+	|-> ops->do_action(substream, state);       //2. 执行
  	|-> ops->post_action(substream, state);     //3. 下一步
 	|-> ops->undo_action(substream, state);		//4. 撤销还原
 ```
