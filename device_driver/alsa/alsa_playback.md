@@ -213,7 +213,7 @@ const struct file_operations snd_pcm_f_ops[2] = {
 			|-> cpu_dai->driver->ops->startup(substream, cpu_dai);
 			  \_**snd_soc_register_component** -> snd_soc_dai_driver -> snd_soc_dai_ops (.startup = jz_i2s_startup)
 			|-> codec_dai->driver->ops->startup(substream, codec_dai);
-              \_**snd_soc_register_codec** -> snd_soc_dai_driver -> snd_soc_dai_ops (.startup = jz_icdc_startup)
+			  \_**snd_soc_register_codec** -> snd_soc_dai_driver -> snd_soc_dai_ops (.startup = jz_icdc_startup)
 			|-> rtd->dai_link->ops->startup(substream);
 			  \_ **snd_soc_register_card** -> snd_soc_dai_link -> snd_soc_ops (.startup = phoenix_spk_sup)
 ```
@@ -686,7 +686,7 @@ snd_pcm_release
 		|-> snd_pcm_action(&snd_pcm_action_stop, substream, state)
 	|
 	|-> substream->ops->hw_free(substream)
-    |-> substream->ops->close(substream)
+	|-> substream->ops->close(substream)
 ```
 
 ### snd_pcm_action_stop回调接口
