@@ -161,11 +161,11 @@ fread函数:
 ``` C
 const struct file_operations snd_pcm_f_ops[2] = {
     {
- 		...
+		...
 		.release =      snd_pcm_release
-        .open =         snd_pcm_playback_open,
-        .unlocked_ioctl =   snd_pcm_playback_ioctl,
-      ...
+		.open =         snd_pcm_playback_open,
+		.unlocked_ioctl =   snd_pcm_playback_ioctl,
+		...
     },
 }
 ```
@@ -213,7 +213,7 @@ const struct file_operations snd_pcm_f_ops[2] = {
 			|-> cpu_dai->driver->ops->startup(substream, cpu_dai);
 			  \_**snd_soc_register_component** -> snd_soc_dai_driver -> snd_soc_dai_ops (.startup = jz_i2s_startup)
 			|-> codec_dai->driver->ops->startup(substream, codec_dai);
-             |\_**snd_soc_register_codec** -> snd_soc_dai_driver -> snd_soc_dai_ops (.startup = jz_icdc_startup)
+              \_**snd_soc_register_codec** -> snd_soc_dai_driver -> snd_soc_dai_ops (.startup = jz_icdc_startup)
 			|-> rtd->dai_link->ops->startup(substream);
 			  \_ **snd_soc_register_card** -> snd_soc_dai_link -> snd_soc_ops (.startup = phoenix_spk_sup)
 ```
@@ -359,7 +359,7 @@ jz_i2s_platfrom_probe
   |-> snd_soc_register_component(&pdev->dev, &jz_i2s_component, &jz_i2s_dai, 1);
 	|
 	|-> snd_soc_register_dai //1. 将dai和codec进行匹配(dai->codec = codec)
-							 //2. 将`snd_soc_dai`的结构添加到`dai_list`(list_add(&dai->list, &dai_list))
+                             //2. 将`snd_soc_dai`的结构添加到`dai_list`(list_add(&dai->list, &dai_list))
 ```
 #### 绑定 --- soc_bind_dai_link
 
@@ -476,11 +476,11 @@ ioctl:
 |
 |-> snd_pcm_lib_write1
 		|_call_back-->snd_pcm_lib_write_transfer(数据传输:copy和map)
-				|_.(内存和DMA之间的数据传递, 循环搬送直到播放完毕)
+			|_.(内存和DMA之间的数据传递, 循环搬送直到播放完毕)
 					char *hwbuf = runtime->dma_area + frames_to_bytes(runtime, hwoff);
 					if (copy_from_user(hwbuf, buf, frames_to_bytes(runtime, frames)))
-        |
-        |-> snd_pcm_start(substream) //**启动传输(只是在开始时,调用一次)**
+		|
+		|-> snd_pcm_start(substream) //**启动传输(只是在开始时,调用一次)**
 			|
 			|-> snd_pcm_action
 				|
