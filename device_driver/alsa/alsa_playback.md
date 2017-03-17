@@ -31,6 +31,10 @@ ioctl(4, 0xc0684113, 0x7f83f5ec)        = 0
 //在播放期间响应Ctrl+C的中断信号
 rt_sigaction(SIGINT, {0x10000000, [RT_65 RT_67], 0x401240 /* SA_??? */}, {SIG_DFL, [RT_67 RT_68 RT_72 RT_74 RT_75 RT_77 RT_81 RT_89 RT_90 RT_91 RT_93 RT_94], 0}, 16) = 0
 
+// mmap
+
+// ioctl - cmd=`SNDRV_PCM_IOCTL_SYNC_PTR`
+
 read(3, "\320\367\200\367\370\370`\370\220\370\330\370@\372h\371\240\371\320\374\230\373\240\374\341\5\301\1\241\5\221\25"..., 12288) = 12288
 read(3, "a\0361\36\241\f\10\376\300\374\320\375\30\375\360\375\340\375\0\377\320\377(\377\370\376p\375p\374\321\0"..., 4096) = 4096
 //ioctl - cmd=`SNDRV_PCM_IOCTL_PREPARE`
@@ -444,7 +448,7 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 	...
 }
 ```
-
+> file: sound/soc/soc-pcm.c 
 ``` C
 void snd_pcm_set_ops(struct snd_pcm *pcm, int direction, struct snd_pcm_ops *ops)
 {
@@ -877,6 +881,27 @@ static int soc_pcm_hw_free(struct snd_pcm_substream *substream)
 		cpu_dai->driver->ops->hw_free(substream, cpu_dai);
     ...
 }
+```
+
+### soc_pcm_pointer
+
+``` C
+static snd_pcm_uframes_t soc_pcm_pointer(struct snd_pcm_substream *substream)                       
+{                                                                                                   
+    // Platform <DMA> :                                                                                                                                                            
+    if (platform->driver->ops && platform->driver->ops->pointer)                                    
+        offset = platform->driver->ops->pointer(substream);                                         
+                                                                                                    
+    if (cpu_dai->driver->ops->delay)                                                                
+        delay += cpu_dai->driver->ops->delay(substream, cpu_dai);                                   
+                                                                                                    
+    if (codec_dai->driver->ops->delay)                                                              
+        delay += codec_dai->driver->ops->delay(substream, codec_dai);                               
+                                                                                                    
+    if (platform->driver->delay)                                                                    
+        delay += platform->driver->delay(substream, codec_dai);                                                                                                                     
+}                                                                                                   
+
 ```
 
 ### soc_pcm_close

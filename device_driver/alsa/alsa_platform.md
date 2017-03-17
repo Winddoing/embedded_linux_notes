@@ -60,4 +60,94 @@ struct snd_pcm_ops {
 };
 ```
 
+### struct snd_soc_pcm_runtime
+
+``` C
+/* SoC machine DAI configuration, glues a codec and cpu DAI together */                    
+struct snd_soc_pcm_runtime {                                                               
+    struct device *dev;                                                                    
+    struct snd_soc_card *card;                                                             
+    struct snd_soc_dai_link *dai_link;                                                     
+    struct mutex pcm_mutex;                                                                
+    enum snd_soc_pcm_subclass pcm_subclass;                                                
+    struct snd_pcm_ops ops;                                                                
+                                                                                           
+    unsigned int dev_registered:1;                                                         
+                                                                                           
+    /* Dynamic PCM BE runtime data */                                                      
+    struct snd_soc_dpcm_runtime dpcm[2];                                                   
+                                                                                           
+    long pmdown_time;                                                                      
+    unsigned char pop_wait:1;                                                              
+                                                                                           
+    /* runtime devices */                                                                  
+    struct snd_pcm *pcm;                                                                   
+    struct snd_compr *compr;                                                               
+    struct snd_soc_codec *codec;                                                           
+    struct snd_soc_platform *platform;                                                     
+    struct snd_soc_dai *codec_dai;                                                         
+    struct snd_soc_dai *cpu_dai;                                                           
+                                                                                           
+    struct delayed_work delayed_work;                                                      
+#ifdef CONFIG_DEBUG_FS                                                                     
+    struct dentry *debugfs_dpcm_root;                                                      
+    struct dentry *debugfs_dpcm_state;                                                     
+#endif                                                                                     
+};                                                                                         
+
+```
+## 注册
+
+``` C
+static struct snd_soc_platform_driver jz_pcm_platform = {               
+    .ops            = &jz_pcm_ops,                                      
+    .pcm_new        = jz_pcm_new,                                       
+    .pcm_free       = jz_pcm_free,                                      
+};                                                                      
+```
+
+```
+snd_soc_register_platform(&pdev->dev, &jz_pcm_platform)
+    |
+    |-> platform->driver = platform_drv
+    |-> list_add(&platform->list, &platform_list)
+```
+
+## 绑定
+
+```
+snd_soc_register_card
+    |
+    |-> snd_soc_instantiate_card
+        |
+        |-> soc_bind_dai_link
+            |
+            |/* find one from the set of registered platforms */    
+            |-> list_for_each_entry(platform, &platform_list, list) {  
+                    if (dai_link->platform_of_node) {                  
+                        if (platform->dev->of_node !=                  
+                            dai_link->platform_of_node)                
+                            continue;                                  
+                    } else {                                           
+                        if (strcmp(platform->name, platform_name))     
+                            continue;                                  
+                    }                                                  
+                                                                       
+                    rtd->platform = platform;                          
+                }                                                         
+
+```
+
+## 回调
+
+```
+snd_soc_instantiate_card
+    |
+    |-> soc_probe_link_dais
+        |
+        |-> soc_new_pcm
+            |
+            |-> 第二次注册 { rtd->ops.open       = soc_pcm_open; ...}
+            |-> platform->driver->pcm_new(rtd)
+```
 
