@@ -12,7 +12,7 @@ CPU --  DDR  --  device  关系图
 
 ### dma_alloc_coherent
 
-原型: 
+原型:
 ``` C
 #define dma_alloc_coherent(d,s,h,f) dma_alloc_attrs(d,s,h,f,NULL)    
 
@@ -68,7 +68,7 @@ void dma_unmap_single(struct device *dev,dma_addr_t *dma_addrp,size_t size,enum 
 
 ### dma_sync_single_for_cpu
 
-原型: 
+原型:
 ``` C
 static inline void dma_sync_single_for_cpu(struct device *dev, dma_addr_t addr,
                        size_t size,
@@ -92,10 +92,10 @@ static void mips_dma_sync_single_for_cpu(struct device *dev,
 
 ### dma_sync_single_for_device
 
-原型: 
+原型:
 
 ``` C
-static inline void dma_sync_single_for_device(struct device *dev, 
+static inline void dma_sync_single_for_device(struct device *dev,
                           dma_addr_t addr, size_t size,
                           enum dma_data_direction dir)
 ```
@@ -169,8 +169,8 @@ struct scatterlist {
 ### dma_map_sg
 
 原型:
-``` C 
-void dma_map_sg(struct device *dev, struct scatterlist *sg, 
+``` C
+void dma_map_sg(struct device *dev, struct scatterlist *sg,
 			int nents, enum dma_data_direction direction);   
 ```
 
@@ -249,7 +249,7 @@ dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
 ```
 ### 实现:
 
-文件: include/asm-generic/dma-mapping-common.h 
+文件: include/asm-generic/dma-mapping-common.h
 
 ``` C
 static inline dma_addr_t dma_map_single_attrs(struct device *dev, void *ptr,
@@ -292,9 +292,7 @@ static inline dma_addr_t dma_map_single_attrs(struct device *dev, void *ptr,
      .mapping_error = mips_dma_mapping_error,
      .dma_supported = mips_dma_supported
  };
- 
+
  struct dma_map_ops *mips_dma_map_ops = &mips_default_dma_map_ops;
  EXPORT_SYMBOL(mips_dma_map_ops);
 ```
-
-

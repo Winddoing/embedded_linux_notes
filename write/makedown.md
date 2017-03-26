@@ -1,5 +1,20 @@
 # Makedown的一些常用语法
 
+## 编辑器 atom
+
+下载：[https://github.com/atom/atom/releases](https://github.com/atom/atom/releases)
+
+### 预览
+
+```
+Ctrl + shift + m
+```
+### 导出pdf
+
+安装插件`markdown-pdf`
+
+导出：`File -> `
+
 
 ## 代码高亮
 
@@ -61,7 +76,7 @@ cond(no)->sub->io
 
 ## 图片
 
-``` 
+```
 ![Alt text](/path/to/img.jpg)
 
 ![Alt text](/path/to/img.jpg "Optional title")
