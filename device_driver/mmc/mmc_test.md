@@ -7,8 +7,8 @@
 ### 配置驱动
 
 ```
-    ->DeviceDriver 
-        -> MMC/SD/SDIO card support (MMC [=y]) 
+    ->DeviceDriver
+        -> MMC/SD/SDIO card support (MMC [=y])
         [*]MMC host test driver
 ```
 

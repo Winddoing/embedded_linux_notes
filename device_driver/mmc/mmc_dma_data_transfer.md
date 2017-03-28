@@ -22,12 +22,12 @@ CMD + DATA
 
 ``` C
 //申请DMA描述符表
-host->adma_table = dma_alloc_coherent(mmc_dev(mmc),                
-                      host->adma_table_sz,                         
-                      &host->adma_addr,                            
-                      GFP_KERNEL);                                 
+host->adma_table = dma_alloc_coherent(mmc_dev(mmc),
+                      host->adma_table_sz,
+                      &host->adma_addr,
+                      GFP_KERNEL);
 //申请数据buffer
-host->align_buffer = kmalloc(host->align_buffer_sz, GFP_KERNEL);   
+host->align_buffer = kmalloc(host->align_buffer_sz, GFP_KERNEL);
 ```
 
 #### 填充DMA描述符
