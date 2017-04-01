@@ -41,3 +41,8 @@ LRCLK=44.1kHz
 串行数据SDATA，就是用二进制补码表示的音频数据。
 
 >有时为了使系统间能够更好地同步，还需要另外传输一个信号`MCLK`，称为主时钟，也叫系统时钟（Sys Clock），是采样频率的`256`倍或`384`倍。
+
+
+## 参考:
+
+1. [An I2S](http://www.nxp.com/assets/documents/data/en/application-notes/AN4520.pdf)

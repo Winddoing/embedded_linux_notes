@@ -25,3 +25,7 @@ a)选择DMA、FORMAT和FIFO通道，原则一致性，方便操作
 ## 参考:
 
 1. [Advanced_Linux_Sound_Architecture](https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture)
+2. [ALSA Project Status Update](https://gstreamer.freedesktop.org/data/events/gstreamer-conference/2012/gsc2012_alsa.pdf)
+3. [ a minimal virtual oscillator driverfor ALSA](http://lac.linuxaudio.org/2012/download/minivosc-LAC2012-slides.pdf)
+4. [A Tutorial on Using the ALSA Audio API](http://equalarea.com/paul/alsa-audio.html)
+
