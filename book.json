@@ -9,11 +9,6 @@
     "structure": {
         "readme": "introduction.md"
     },
-    "links": {
-        "sidebar": {
-            "Home": "https://winddoing.github.io/"
-        }
-    },
     "plugins": [
         "-lunr",
         "-search",
