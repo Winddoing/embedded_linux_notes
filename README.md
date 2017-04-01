@@ -6,6 +6,10 @@
 
 临时的笔记和总结。
 
+| 下载 |
+| :--: |
+| [PDF](https://www.gitbook.com/download/pdf/book/winddoing/embedded_notes) |
+
 ## 旧的学习笔记
 
 | 在线 | PDF |
