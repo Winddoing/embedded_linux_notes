@@ -1,11 +1,29 @@
 # 前言
-主要记录GitBook的安装配置以及一些插件信息, 下面是GitBook的一些资源
 
-* [GitBook主页](https://www.gitbook.com/)
-* [Github地址](https://github.com/GitbookIO/)
-* [GitBook编辑器](https://www.gitbook.com/editor/osx)
-* [GitBook Toolchain Documentation](http://toolchain.gitbook.com/)
-* [GitBook Documentation](http://help.gitbook.com/)
+>嵌入式Linux开发相关知识点
+
+记录平时工作和学习中的问题和心得。
+
+临时的笔记和总结。
+
+## 下载
+
+| 格式 |
+| :--: |
+| [PDF](https://www.gitbook.com/download/pdf/book/winddoing/embedded_notes) |
+| [mobi](https://www.gitbook.com/download/mobi/book/winddoing/embedded_notes) |
+| [epud](https://www.gitbook.com/download/epub/book/winddoing/embedded_notes)|
+
+## 旧的学习笔记
+
+| 在线 | PDF |
+| :--: | :--: |
+|[预览](https://winddoing.github.io/old_notes/) | [下载](https://github.com/Winddoing/old_notes/raw/master/embedded_linux_notes.pdf) |
+
+
+## 常用工具
+
+* [在线绘图](https://www.processon.com/u/winddoing)
 
 ---
 > 如若转载请标明出处.

@@ -1,6 +1,5 @@
 # 目录
-* [简介](introduction.md)
-* [笔记](README.md)
+* [前言](introduction.md)
 * [Linux 内核相关](linux_kernel/README.md)
 	* [内核调试](linux_kernel/debug.md)
 	* [内核同步](linux_kernel/sync.md)
