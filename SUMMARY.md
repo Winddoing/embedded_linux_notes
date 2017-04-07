@@ -1,5 +1,5 @@
 # 目录
-* [笔记](README.md)
+* [前言](introduction.md)
 * [Linux 内核相关](linux_kernel/README.md)
 	* [内核调试](linux_kernel/debug.md)
 	* [内核同步](linux_kernel/sync.md)
@@ -25,7 +25,7 @@
 * [Linux应用相关](linux_app_program/README.md)
 * [网络相关](network/README.md)
 * [数据结构](algorithm/README.md)
-  * [树](algorithm/tree.md)
+  	* [树](algorithm/tree.md)
 * [开发环境](develop/README.md)
 	* [linux实验室](develop/linux-lab.md)
 	* [Docker使用](develop/docker-use.md)
