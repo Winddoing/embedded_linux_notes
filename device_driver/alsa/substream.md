@@ -20,3 +20,24 @@
 ```
 
 
+## 创建
+
+``` C
+snd_pcm_open
+    |
+    |-> snd_pcm_open_file
+        |
+        |-> snd_pcm_open_substream
+            |
+            |-> snd_pcm_attach_substream
+            |
+            |-> snd_pcm_hw_constraints_init
+            |
+            |-> substream->ops->open(substream)
+            |
+            |-> snd_pcm_hw_constraints_complete
+            |
+            |-> *rsubstream = substream
+```
+
+

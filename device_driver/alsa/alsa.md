@@ -90,6 +90,45 @@ card->instantiated = 0;   //卡是否实例化
 >  Audacity 2.0.5
 
 
+## 驱动相关定义
+
+```
+ #define JZ_DMA_BUFFERSIZE (32*1024)                                                       
+ static const struct snd_pcm_hardware jz_pcm_hardware = {                                  
+     .info = SNDRV_PCM_INFO_MMAP |                                                         
+         SNDRV_PCM_INFO_PAUSE |                                                            
+         SNDRV_PCM_INFO_RESUME |                                                           
+         SNDRV_PCM_INFO_MMAP_VALID |                                                       
+         SNDRV_PCM_INFO_INTERLEAVED |                                                      
+         SNDRV_PCM_INFO_BLOCK_TRANSFER,                                                    
+     .formats = SNDRV_PCM_FMTBIT_S24_LE |                                                  
+         SNDRV_PCM_FMTBIT_S20_3LE |                                                        
+         SNDRV_PCM_FMTBIT_S18_3LE |                                                        
+         SNDRV_PCM_FMTBIT_S16_LE |                                                         
+         SNDRV_PCM_FMTBIT_S8,                                                              
+     .rates                  = SNDRV_PCM_RATE_8000_192000,                                 
+     .rate_min               = 8000,                                                       
+     .rate_max               = 192000,                                                     
+     .channels_min           = 1,                                                          
+     .channels_max           = 2,                                                          
+     .buffer_bytes_max       = JZ_DMA_BUFFERSIZE,                                          
+     .period_bytes_min       = PAGE_SIZE / 4, /* 1K */                                     
+     .period_bytes_max       = PAGE_SIZE * 2, /* 64K */                                    
+     .periods_min            = 4,                                                          
+     .periods_max            = 64,                                                         
+     .fifo_size              = 0,                                                          
+ };                                                                                        
+```
+SNDRV_PCM_FMTBIT_S24_LE
+
+LE  --   小端
+BE  --   大端
+
+S24 --    
+U24 --   
+
+
+
 
 ## 参考:
 
@@ -97,3 +136,4 @@ card->instantiated = 0;   //卡是否实例化
 2. [ALSA框架](http://www.360doc.com/content/12/0731/17/10388890_227508444.shtml)
 3. [alsa架构音频分析总结](http://blog.csdn.net/shen924/article/details/8775352)
 4. [alsa相关](http://www.alivepea.me/)
+5. [Linux ALSA 音频系统：物理链路篇](http://www.itwendao.com/article/detail/290711.html)
