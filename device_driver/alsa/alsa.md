@@ -137,3 +137,4 @@ U24 --
 3. [alsa架构音频分析总结](http://blog.csdn.net/shen924/article/details/8775352)
 4. [alsa相关](http://www.alivepea.me/)
 5. [Linux ALSA 音频系统：物理链路篇](http://www.itwendao.com/article/detail/290711.html)
+6. [alsa driver](http://www.alsa-project.org/main/index.php/Minivosc)
