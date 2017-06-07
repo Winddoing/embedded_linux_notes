@@ -21,6 +21,7 @@
 
 正常录音: 应用层使用poll的调用关系
 
+``` C
 snd_pcm_period_elapsed
     |
     |-> snd_pcm_update_hw_ptr0
@@ -29,7 +30,7 @@ snd_pcm_period_elapsed
         |
         |-> snd_pcm_update_state
             |-> snd_pcm_capture_avail
-            |-> wake_up(&runtime->sleep);                                   
+            |-> wake_up(&runtime->sleep);
 ```
 
 ## read进程
@@ -42,11 +43,11 @@ snd_pcm_period_elapsed
 
 ``` C
 用户空间      arecord -f cd 1.wav  --- 产生read进程
-                
+
            ioctl - SNDRV_PCM_IOCTL_READI_FRAMES
-                        | 
+                        |
 -------------------------------------------------
-                        |                  
+                        |
 内核空间        snd_pcm_capture_ioctl
 ```
 
@@ -69,9 +70,9 @@ wait_for_avail的实现逻辑:
 
 ``` C
 wait_for_avail
-    |-> init_waitqueue_entry(&wait, current);       
-    |-> set_current_state(TASK_INTERRUPTIBLE);      
-    |-> add_wait_queue(&runtime->tsleep, &wait);    
+    |-> init_waitqueue_entry(&wait, current);
+    |-> set_current_state(TASK_INTERRUPTIBLE);
+    |-> add_wait_queue(&runtime->tsleep, &wait);
     |
     |-> for(;;)
         |-> signal_pending(current)
@@ -95,7 +96,7 @@ snd_pcm_capture_open
         |-> snd_pcm_open_file
             |-> snd_pcm_open_substream
                 |-> snd_pcm_attach_substream
-                    |-> init_waitqueue_head(&runtime->sleep); 
+                    |-> init_waitqueue_head(&runtime->sleep);
 ```
 
 2. 将当前进程加入sleep队列
@@ -103,13 +104,13 @@ snd_pcm_capture_open
 ``` C
 .poll =         snd_pcm_capture_poll
     |->  poll_wait(file, &runtime->sleep, wait); //将进程添加到sleep队列
-        
+
 ```
 > poll()该接口用户空间arecord应用有调用
 
 
-3. poll的作用; 
-    
+3. poll的作用;
+
 * **判断该文件是否可读**
 * **将该进程挂到等待队列中**
 
@@ -119,10 +120,10 @@ snd_pcm_capture_open
 通过源码中的wakeup可以判断对read进程的唤醒存在两种方式
 
 ``` C
- if (runtime->twake) {                                                             
-     if (avail >= runtime->twake)                   
-         wake_up(&runtime->tsleep); //核心层自己维护                                                                                                             
- } else if (avail >= runtime->control->avail_min)                                                       
+ if (runtime->twake) {
+     if (avail >= runtime->twake)
+         wake_up(&runtime->tsleep); //核心层自己维护
+ } else if (avail >= runtime->control->avail_min)
      wake_up(&runtime->sleep);    //通过poll机制实现
 ```
 
@@ -132,14 +133,14 @@ snd_pcm_capture_open
 1. snd_pcm_lib_read1
     |-> runtime->twake = runtime->control->avail_min ? : 1;
 
-2. snd_pcm_hw_params    
+2. snd_pcm_hw_params
     |-> runtime->period_size = params_period_size(params);
     |-> runtime->control->avail_min = runtime->period_size;
-    
+
 3. params_period_size(params)
     |-> 解析用户空间参数SNDRV_PCM_HW_PARAM_PERIOD_SIZE
-    
-4. arecord参数选项: 
+
+4. arecord参数选项:
     --period-size=#     distance between interrupts is # frames
 ```
 
@@ -174,15 +175,15 @@ snd_pcm_period_elapsed
     |-> snd_pcm_update_hw_ptr0
         |
         |-> pos = substream->ops->pointer(substream); // 回调pladform中的.pointer接口
-            if (pos == SNDRV_PCM_POS_XRUN) {   // SNDRV_PCM_POS_XRUN = -1  
-                xrun(substream);                  
-                return -EPIPE;  // EPIPE --  Broken pipe                   
-            }  
+            if (pos == SNDRV_PCM_POS_XRUN) {   // SNDRV_PCM_POS_XRUN = -1
+                xrun(substream);
+                return -EPIPE;  // EPIPE --  Broken pipe
+            }
         |-> 更新指针(hw_ptr_base,hw_ptr_interrupt, status->hw_ptr), (hw_ptr_jiffies)
         |-> snd_pcm_update_state
             |
             |-> snd_pcm_playback_avail(/snd_pcm_capture_avail) //得到录放有效数据大小
-            |--> snd_pcm_drain_done() // state == SNDRV_PCM_STATE_DRAINING                                   
+            |--> snd_pcm_drain_done() // state == SNDRV_PCM_STATE_DRAINING
 ```
 
 
