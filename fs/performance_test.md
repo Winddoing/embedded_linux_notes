@@ -5,6 +5,8 @@
 
 > 一个文件系统性能评测工具，可以测试Read, write, re-read,re-write, read backwards, read strided, fread, fwrite, random read, pread, mmap, aio_read, aio_write 等不同模式下不同文件系统的读写性能
 
+官网： [http://www.iozone.org](http://www.iozone.org/)
+
 | 参数 | 说明 |
 | :-:  | :-:   |
 |-a |全自动模式测试。测试记录块大小从4k到16M，测试文件从64k到512M|
