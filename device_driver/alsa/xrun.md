@@ -153,6 +153,7 @@ snd_pcm_capture_open
 在对每个DMA描述符进行处理时,也就是DMA描述符中断的callback中.
 
 ### 位置
+
 ``` C
 snd_pcm_period_elapsed()
 ```
@@ -165,7 +166,7 @@ snd_pcm_period_elapsed()
 作用: 通知缓冲区空闲（对应回放）或者有效（对应录音）
 
 
-### snd_pcm_period_elapsed
+### 条件
 
 实现逻辑: 主要以`overrun`为例
 
@@ -184,6 +185,15 @@ snd_pcm_period_elapsed
             |
             |-> snd_pcm_playback_avail(/snd_pcm_capture_avail) //得到录放有效数据大小
             |--> snd_pcm_drain_done() // state == SNDRV_PCM_STATE_DRAINING
+```
+
+> 当`pos == SNDRV_PCM_POS_XRUN`时,出现overrun
+
+### 出现overrun后的处理
+
+``` C
+xrun
+  |-> snd_pcm_stop(substream, SNDRV_PCM_STATE_XRUN);
 ```
 
 
