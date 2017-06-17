@@ -448,7 +448,7 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 	...
 }
 ```
-> file: sound/soc/soc-pcm.c 
+> file: sound/soc/soc-pcm.c
 ``` C
 void snd_pcm_set_ops(struct snd_pcm *pcm, int direction, struct snd_pcm_ops *ops)
 {
@@ -886,21 +886,21 @@ static int soc_pcm_hw_free(struct snd_pcm_substream *substream)
 ### soc_pcm_pointer
 
 ``` C
-static snd_pcm_uframes_t soc_pcm_pointer(struct snd_pcm_substream *substream)                       
-{                                                                                                   
-    // Platform <DMA> :                                                                                                                                                            
-    if (platform->driver->ops && platform->driver->ops->pointer)                                    
-        offset = platform->driver->ops->pointer(substream);                                         
-                                                                                                    
-    if (cpu_dai->driver->ops->delay)                                                                
-        delay += cpu_dai->driver->ops->delay(substream, cpu_dai);                                   
-                                                                                                    
-    if (codec_dai->driver->ops->delay)                                                              
-        delay += codec_dai->driver->ops->delay(substream, codec_dai);                               
-                                                                                                    
-    if (platform->driver->delay)                                                                    
-        delay += platform->driver->delay(substream, codec_dai);                                                                                                                     
-}                                                                                                   
+static snd_pcm_uframes_t soc_pcm_pointer(struct snd_pcm_substream *substream)
+{
+    // Platform <DMA> :
+    if (platform->driver->ops && platform->driver->ops->pointer)
+        offset = platform->driver->ops->pointer(substream);
+
+    if (cpu_dai->driver->ops->delay)
+        delay += cpu_dai->driver->ops->delay(substream, cpu_dai);
+
+    if (codec_dai->driver->ops->delay)
+        delay += codec_dai->driver->ops->delay(substream, codec_dai);
+
+    if (platform->driver->delay)
+        delay += platform->driver->delay(substream, codec_dai);
+}
 
 ```
 

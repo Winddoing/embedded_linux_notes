@@ -6,16 +6,16 @@
 ## 数据类型
 
 ``` C
-/*                                                                                         
- * info for buffer allocation                                                              
- */                                                                                        
-struct snd_dma_buffer {                                                                    
-    struct snd_dma_device dev;  /* device type */                                          
-    unsigned char *area;    /* virtual pointer */                                          
-    dma_addr_t addr;    /* physical address */                                             
-    size_t bytes;       /* buffer size in bytes */                                         
-    void *private_data; /* private for allocator; don't touch */                           
-};                                                                                         
+/*
+ * info for buffer allocation
+ */
+struct snd_dma_buffer {
+    struct snd_dma_device dev;  /* device type */
+    unsigned char *area;    /* virtual pointer */
+    dma_addr_t addr;    /* physical address */
+    size_t bytes;       /* buffer size in bytes */
+    void *private_data; /* private for allocator; don't touch */
+};
 ```
 
 ## 申请
@@ -23,8 +23,8 @@ struct snd_dma_buffer {
 在通过machine将每一条声卡链路建立完成后.将通过`pcm_new`申请dma_buffer
 
 ``` C
-snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,       
-    card->dev, buffer_size, buffer_bytes_max);                       
+snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,
+    card->dev, buffer_size, buffer_bytes_max);
 ```
 >dma buffer获得后，即是获得了dma操作的源地址，那么目的地址在哪里？
 

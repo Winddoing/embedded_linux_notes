@@ -20,7 +20,7 @@ snd_pcm_new_internal
 				|___
 					static struct snd_device_ops ops = {
    							 .dev_free = snd_pcm_dev_free,
-   							 .dev_register = snd_pcm_dev_register,               
+   							 .dev_register = snd_pcm_dev_register,
     						 .dev_disconnect = snd_pcm_dev_disconnect,
 					};
 

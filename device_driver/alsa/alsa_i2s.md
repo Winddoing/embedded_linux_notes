@@ -9,13 +9,13 @@
 
 
 ```
-int snd_soc_register_component(struct device *dev,                           
+int snd_soc_register_component(struct device *dev,
              const struct snd_soc_component_driver *cmpnt_drv,
              struct snd_soc_dai_driver *dai_drv,
              int num_dai)
 ```
 
-参数: 
+参数:
 
 
 
@@ -24,7 +24,7 @@ int snd_soc_register_component(struct device *dev,
 ### struct snd_soc_component_driver
 
 ```
-struct snd_soc_component_driver {                 
+struct snd_soc_component_driver {
     const char *name;
 };
 ```
@@ -56,7 +56,7 @@ struct snd_soc_dai_driver {
     unsigned int symmetric_rates:1;
 
     /* probe ordering - for components with runtime dependencies */
-    int probe_order;                                                                                     
+    int probe_order;
     int remove_order;
 };
 ```
@@ -84,7 +84,7 @@ struct snd_soc_dai_ops {
         unsigned int tx_mask, unsigned int rx_mask,
         int slots, int slot_width);
     int (*set_channel_map)(struct snd_soc_dai *dai,
-        unsigned int tx_num, unsigned int *tx_slot,                                               
+        unsigned int tx_num, unsigned int *tx_slot,
         unsigned int rx_num, unsigned int *rx_slot);
     int (*set_tristate)(struct snd_soc_dai *dai, int tristate);
 
