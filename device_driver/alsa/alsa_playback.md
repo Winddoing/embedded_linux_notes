@@ -1,6 +1,52 @@
 # alsa 音频播放
 
-`tinyplay`播放音乐
+<!-- vim-markdown-toc GFM -->
+* [`tinyplay`播放音乐](#tinyplay播放音乐)
+* [疑惑](#疑惑)
+	* [为什么open两次pcmC0D0p设备节点](#为什么open两次pcmc0d0p设备节点)
+	* [为什么read音频文件两次,并且读的数据大小不一致](#为什么read音频文件两次并且读的数据大小不一致)
+	* [用户空间申请buffer大小的依据](#用户空间申请buffer大小的依据)
+* [ioctl幻数](#ioctl幻数)
+* [open](#open)
+	* [struct snd_pcm_str](#struct-snd_pcm_str)
+	* [struct snd_pcm_substream](#struct-snd_pcm_substream)
+	* [struct snd_soc_pcm_runtime](#struct-snd_soc_pcm_runtime)
+	* [struct snd_soc_dai_driver](#struct-snd_soc_dai_driver)
+	* [struct snd_soc_dai](#struct-snd_soc_dai)
+	* [struct snd_soc_dai 和 snd_soc_pcm_runtime](#struct-snd_soc_dai-和-snd_soc_pcm_runtime)
+		* [注册`struct snd_soc_dai`的功能接口到`LIST_HEAD(dai_list)`](#注册struct-snd_soc_dai的功能接口到list_headdai_list)
+		* [绑定 --- soc_bind_dai_link](#绑定-----soc_bind_dai_link)
+	* [snd_pcm_substream 和 snd_soc_pcm_runtime](#snd_pcm_substream-和-snd_soc_pcm_runtime)
+	* [struct snd_soc_dai_ops](#struct-snd_soc_dai_ops)
+* [ioctl](#ioctl)
+	* [snd_pcm_start](#snd_pcm_start)
+	* [SNDRV_PCM_IOCTL_HW_REFINE](#sndrv_pcm_ioctl_hw_refine)
+	* [SNDRV_PCM_IOCTL_INFO](#sndrv_pcm_ioctl_info)
+	* [SNDRV_PCM_IOCTL_HW_PARAMS](#sndrv_pcm_ioctl_hw_params)
+	* [SNDRV_PCM_IOCTL_SW_PARAMS](#sndrv_pcm_ioctl_sw_params)
+	* [SNDRV_PCM_IOCTL_PREPARE](#sndrv_pcm_ioctl_prepare)
+	* [SNDRV_PCM_IOCTL_WRITEI_FRAMES](#sndrv_pcm_ioctl_writei_frames)
+		* [写数据的组织结构](#写数据的组织结构)
+		* [数据传输dma_area](#数据传输dma_area)
+* [close](#close)
+	* [snd_pcm_action_stop回调接口](#snd_pcm_action_stop回调接口)
+	* [ASOC接口](#asoc接口)
+* [PCM的action函数 -- snd_pcm_action](#pcm的action函数----snd_pcm_action)
+	* [函数实现:](#函数实现)
+	* [调用关系:](#调用关系)
+* [ASOC接口的具体相关实现:](#asoc接口的具体相关实现)
+	* [ASOC接口的回调注册](#asoc接口的回调注册)
+	* [soc_pcm_open](#soc_pcm_open)
+	* [soc_pcm_hw_params](#soc_pcm_hw_params)
+	* [soc_pcm_prepare](#soc_pcm_prepare)
+	* [soc_pcm_trigger](#soc_pcm_trigger)
+	* [soc_pcm_hw_free](#soc_pcm_hw_free)
+	* [soc_pcm_pointer](#soc_pcm_pointer)
+	* [soc_pcm_close](#soc_pcm_close)
+* [参考](#参考)
+
+<!-- vim-markdown-toc -->
+## `tinyplay`播放音乐
 
 ``` C
 # strace  tinyplay  pcmrec.wav
@@ -144,7 +190,7 @@ fread函数:
 
 ## ioctl幻数
 
-``` C
+```C
 //获取声卡信息返回给用户空间
 #define SNDRV_PCM_IOCTL_INFO _IOR('A', 0x01, struct snd_pcm_info)
 //硬件参数重新规范
