@@ -6,27 +6,33 @@
 ## 数据类型
 
 ``` C
-/*
- * info for buffer allocation
- */
-struct snd_dma_buffer {
-    struct snd_dma_device dev;  /* device type */
-    unsigned char *area;    /* virtual pointer */
-    dma_addr_t addr;    /* physical address */
-    size_t bytes;       /* buffer size in bytes */
-    void *private_data; /* private for allocator; don't touch */
-};
+/*                                                                                         
+ * info for buffer allocation                                                              
+ */                                                                                        
+struct snd_dma_buffer {                                                                    
+    struct snd_dma_device dev;  /* device type */                                          
+    unsigned char *area;    /* virtual pointer */                                          
+    dma_addr_t addr;    /* physical address */                                             
+    size_t bytes;       /* buffer size in bytes */                                         
+    void *private_data; /* private for allocator; don't touch */                           
+};                                                                                         
 ```
 
 ## 申请
 
 在通过machine将每一条声卡链路建立完成后.将通过`pcm_new`申请dma_buffer
 
+* 申请当前的stream支持的最大的DMA buffer内存空间.
 ``` C
-snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,
-    card->dev, buffer_size, buffer_bytes_max);
+snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,       
+    card->dev, buffer_size, buffer_bytes_max);                       
 ```
 >dma buffer获得后，即是获得了dma操作的源地址，那么目的地址在哪里？
+
+* 实际使用的DMA buffer空间大小,跟实际的采样率,位宽,通道有关.
+``` C
+snd_pcm_lib_malloc_pages(substream, params_buffer_bytes(params));
+```
 
 ## DMA buffer的管理
 
@@ -35,12 +41,32 @@ snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,
 ![rang buffer]()
 
 
+1. Period size：周期，每次硬件中断处理音频数据的帧数，对于音频设备的数据读写，以此为单位。
+
+2. Buffer size：数据缓冲区大小，这里特指runtime的buffer size，而不是snd_pcm_hardware定义的buffer_bytes_max。
+一般来说Buffer size = period_size * period_count(periods)，**period_count相当于处理完一个buffer数据所需的硬件中断次数(在DMA传输中,相当于DMA描述符的个数)。**
+
+大小:
+``` C
+runtime->period_size = params_period_size(params);    
+runtime->periods = params_periods(params);            
+runtime->buffer_size = params_buffer_size(params);
+```
+
+> period_size的大小确认为,sample_rate / channel / frame Byte
+> frame = channel*bit/8 Byte
+
 `snd_pcm_runtime`结构中，使用了四个相关的字段来完成这个逻辑缓冲区的管理：
 
 * `snd_pcm_runtime.hw_ptr_base`  环形缓冲区每一圈的基地址，当读写指针越过一圈后，它按buffer size进行移动；
 * `snd_pcm_runtime.status->hw_ptr`  硬件逻辑位置，播放时相当于读指针，录音时相当于写指针；
 * `snd_pcm_runtime.control->appl_ptr`  应用逻辑位置，播放时相当于写指针，录音时相当于读指针；
 * `snd_pcm_runtime.boundary`  扩展后的逻辑缓冲区大小，通常是(2^n)*size；
+
+
+
+
+
 
 
 ### 播放
@@ -74,3 +100,9 @@ snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,
 ## 设置运行时的硬件参数
 
 >snd_soc_set_runtime_hwparams
+
+
+## 参考
+
+1. [内核Alsa之pcm](http://kuafu80.blog.163.com/blog/static/12264718020148511458729/)
+2. [ALSA lib基本概念](http://www.cnblogs.com/fellow1988/p/6195233.html)
