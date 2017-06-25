@@ -1,0 +1,396 @@
+@startuml  aa.png
+
+class snd_card #gray {
+	int number;                                  
+
+	char id[16];                                         
+	char driver[16];                                                       
+                    
+	char mixername[80];                                                 
+	char components[128];                             
+                                                 
+	struct module *module;                                   
+
+	void *private_data;                          
+	void (*private_free) (struct snd_card *card);            
+                                             
+	struct list_head devices;                                            
+}
+
+class snd_pcm #yellow {
+	struct snd_card *card;                                                     
+	struct list_head list;                                                     
+	int device;                                         
+	unsigned int info_flags;                                                   
+	unsigned short dev_class;                                                  
+	unsigned short dev_subclass;                                               
+	char id[64];                                                               
+	char name[80];                                                             
+	struct snd_pcm_str streams[2];                                             
+	                                    
+	void *private_data;                                                        
+	void (*private_free) (struct snd_pcm *pcm);                                
+	struct device *dev;             
+	bool internal;                     
+}
+
+snd_pcm --* snd_pcm_str
+snd_pcm ..> snd_card
+
+class snd_soc_card #gray {                                     
+	const char *name;                                     
+	struct device *dev;                                   
+	struct snd_card *snd_card;                            
+	struct module *owner;                                 
+
+	bool instantiated;                                    
+
+	int (*probe)(struct snd_soc_card *card);              
+	int (*remove)(struct snd_soc_card *card);             
+                            
+	struct snd_soc_dai_link *dai_link;                                        
+	int num_links;                                                            
+	struct snd_soc_pcm_runtime *rtd;                                          
+	int num_rtd;                                                              
+
+	const struct snd_kcontrol_new *controls;                                  
+	int num_controls;                                                         
+
+	struct list_head codec_dev_list;                              
+	struct list_head platform_dev_list;                           
+	struct list_head dai_dev_list;                                
+
+	void *drvdata;     
+}
+
+snd_soc_card ..> snd_card : snd_soc_register_card
+snd_soc_card --* snd_soc_dai_link
+snd_soc_card --* snd_soc_pcm_runtime
+snd_soc_card --* snd_kcontrol_new
+
+note "通过soc_bind_dai_link关联" as N1
+snd_soc_dai_link .. N1
+N1 .. snd_soc_pcm_runtime
+
+class snd_soc_dai_link #gray ##white {
+	const char *name;          
+	const char *stream_name;       
+
+	const char *cpu_name;                    
+	const struct device_node *cpu_of_node;   
+	const char *cpu_dai_name;  
+
+	const char *codec_name; 
+	const struct device_node *codec_of_node;
+	const char *codec_dai_name; 
+
+	const char *platform_name;                 
+	const struct device_node *platform_of_node;
+
+	const struct snd_soc_pcm_stream *params;                      
+	unsigned int dai_fmt;          
+
+	int (*init)(struct snd_soc_pcm_runtime *rtd);    
+
+	const struct snd_soc_ops *ops;         
+}
+
+snd_soc_dai_link --* snd_soc_pcm_stream
+snd_soc_dai_link --* snd_soc_ops
+
+class snd_soc_pcm_stream {
+	const char *stream_name;   
+	u64 formats;            
+	unsigned int rates;     
+	unsigned int rate_min;     
+	unsigned int rate_max;     
+	unsigned int channels_min; 
+	unsigned int channels_max; 
+	unsigned int sig_bits;     
+}
+
+
+interface snd_soc_ops {
+	int (*startup)(struct snd_pcm_substream *);                                          
+	void (*shutdown)(struct snd_pcm_substream *);                                        
+	int (*hw_params)(struct snd_pcm_substream *, 
+	struct snd_pcm_hw_params *);            
+	int (*hw_free)(struct snd_pcm_substream *);                                          
+	int (*prepare)(struct snd_pcm_substream *);                                          
+	int (*trigger)(struct snd_pcm_substream *, int);                                     
+}
+
+class snd_soc_pcm_runtime #green {
+	struct device *dev;                            
+	struct snd_soc_card *card;                     
+	struct snd_soc_dai_link *dai_link;             
+
+	enum snd_soc_pcm_subclass pcm_subclass;        
+
+	struct snd_pcm_ops ops;                        
+	unsigned char pop_wait:1;    
+                          
+	struct snd_pcm *pcm;                             
+	struct snd_soc_codec *codec;                     
+	struct snd_soc_platform *platform;               
+	struct snd_soc_dai *codec_dai;                   
+	struct snd_soc_dai *cpu_dai;                     
+}
+
+snd_soc_pcm_runtime ..> snd_soc_card
+snd_soc_pcm_runtime ..> snd_soc_dai_link
+snd_soc_pcm_runtime --* snd_soc_pcm_subclass
+snd_soc_pcm_runtime --* snd_pcm_ops
+snd_soc_pcm_runtime ..> snd_pcm
+snd_soc_pcm_runtime --* snd_soc_codec
+snd_soc_pcm_runtime --* snd_soc_platform
+snd_soc_pcm_runtime --* codec_dai
+snd_soc_pcm_runtime --* cpu_dai
+codec_dai --|> snd_soc_dai
+cpu_dai --|> snd_soc_dai
+
+class codec_dai #white ##white {
+}
+class cpu_dai #white ##white {
+}
+
+enum snd_soc_pcm_subclass {            
+    SND_SOC_PCM_CLASS_PCM   = 0,       
+    SND_SOC_PCM_CLASS_BE    = 1,       
+}
+
+interface snd_pcm_ops {
+	int (*open)(struct snd_pcm_substream *substream);                
+	int (*close)(struct snd_pcm_substream *substream);               
+	int (*hw_params)(struct snd_pcm_substream *substream,
+	struct snd_pcm_hw_params *params);                      
+	int (*hw_free)(struct snd_pcm_substream *substream);             
+	int (*prepare)(struct snd_pcm_substream *substream);             
+	int (*trigger)(struct snd_pcm_substream *substream, 
+	int cmd);    
+
+}
+
+class snd_soc_platform #gray ##white {
+	const char *name;                                          
+	int id;                                                    
+	struct device *dev;                                        
+	const struct snd_soc_platform_driver *driver;              
+
+	struct snd_soc_card *card;                   
+	struct list_head list;                       
+	struct list_head card_list;                  
+}
+
+snd_soc_platform ..> snd_soc_card
+snd_soc_platform --* snd_soc_platform_driver
+
+class snd_soc_platform_driver {
+	int (*probe)(struct snd_soc_platform *);                                 
+	int (*remove)(struct snd_soc_platform *);                                
+	int (*suspend)(struct snd_soc_dai *dai);                                 
+	int (*resume)(struct snd_soc_dai *dai);                                  
+
+                                    
+	int (*pcm_new)(struct snd_soc_pcm_runtime *);                            
+	void (*pcm_free)(struct snd_pcm *);                                      
+           
+	const struct snd_kcontrol_new *controls;                                 
+	int num_controls;                                                        
+	const struct snd_soc_dapm_widget *dapm_widgets;                          
+	int num_dapm_widgets;                                                    
+	const struct snd_soc_dapm_route *dapm_routes;                            
+	int num_dapm_routes;                                                     
+            
+	const struct snd_pcm_ops *ops;           
+}
+snd_soc_platform_driver -* snd_pcm_ops
+
+class snd_soc_dai #gray  ##white {
+	const char *name;                       
+	int id;                                 
+	struct device *dev;                     
+	                                 
+	struct snd_soc_dai_driver *driver;               
+
+	struct snd_soc_dapm_widget *playback_widget;            
+	struct snd_soc_dapm_widget *capture_widget;             
+	struct snd_soc_dapm_context dapm;                       
+
+	struct snd_pcm_runtime *runtime;  
+                    
+	struct snd_soc_platform *platform;               
+	struct snd_soc_codec *codec;                     
+
+	struct snd_soc_card *card;                       
+
+	struct list_head list;                           
+	struct list_head card_list;                      
+}
+
+snd_soc_dai ..> snd_soc_card
+snd_soc_dai ..> snd_soc_platform
+snd_soc_dai ..> snd_soc_codec
+snd_soc_dai ..> snd_pcm_runtime
+snd_soc_dai --* snd_soc_dai_driver
+
+class snd_soc_dai_driver {             
+	const char *name;                  
+	unsigned int id;                                   
+
+                        
+	int (*probe)(struct snd_soc_dai *dai);              
+	int (*remove)(struct snd_soc_dai *dai);             
+	int (*suspend)(struct snd_soc_dai *dai);            
+	int (*resume)(struct snd_soc_dai *dai);             
+                                
+	const struct snd_soc_dai_ops *ops;             
+                       
+	struct snd_soc_pcm_stream capture;             
+	struct snd_soc_pcm_stream playback;            
+}
+
+snd_soc_dai_driver -* snd_soc_dai_ops
+snd_soc_dai_driver --> capture_stream
+snd_soc_dai_driver --> playback_stream 
+
+capture_stream --|> snd_soc_pcm_stream
+playback_stream --|> snd_soc_pcm_stream
+
+class capture_stream #white ##white {
+}
+class playback_stream #white ##white {
+}
+
+interface snd_soc_dai_ops {
+	int (*set_sysclk)(struct snd_soc_dai *dai,                                  
+	int clk_id, unsigned int freq, int dir);                                
+	int (*set_pll)(struct snd_soc_dai *dai, int pll_id, 
+	int source, unsigned int freq_in, unsigned int freq_out);                           
+	int (*set_clkdiv)(struct snd_soc_dai *dai, int div_id, 
+	int div);            
+
+	int (*set_fmt)(struct snd_soc_dai *dai, unsigned int fmt);                  
+	int (*set_tdm_slot)(struct snd_soc_dai *dai,                                
+	unsigned int tx_mask, unsigned int rx_mask,                             
+	int slots, int slot_width);                                             
+}
+
+class snd_soc_codec #gray ##white {
+	const char *name;                                              
+	const char *name_prefix;                                       
+	int id;                                                        
+	struct device *dev;                                            
+	const struct snd_soc_codec_driver *driver;                     
+	struct mutex mutex;                                    
+	struct snd_soc_card *card;                             
+	struct list_head list;                                 
+	struct list_head card_list;                            
+	int num_dai;                                           
+	size_t reg_size;               
+	int (*volatile_register)(struct snd_soc_codec *, unsigned int);      
+	int (*readable_register)(struct snd_soc_codec *, unsigned int);      
+	int (*writable_register)(struct snd_soc_codec *, unsigned int);      
+	unsigned int (*read)(struct snd_soc_codec *, unsigned int);        
+	int (*write)(struct snd_soc_codec *, unsigned int, unsigned int);  
+}
+
+snd_soc_codec ..> snd_soc_card
+snd_soc_codec ..* snd_soc_codec_driver
+
+class snd_soc_codec_driver {                                                      
+	int (*probe)(struct snd_soc_codec *);                                  
+	int (*remove)(struct snd_soc_codec *);                                 
+	int (*suspend)(struct snd_soc_codec *);                                
+	int (*resume)(struct snd_soc_codec *);                                 
+
+	const struct snd_kcontrol_new *controls;                               
+	int num_controls;                                                      
+	const struct snd_soc_dapm_widget *dapm_widgets;                        
+	int num_dapm_widgets;                                                  
+	const struct snd_soc_dapm_route *dapm_routes;                          
+	int num_dapm_routes;                                                   
+                                          
+	int (*set_sysclk)(struct snd_soc_codec *codec,                         
+	int clk_id, int source, unsigned int freq, int dir);         
+	int (*set_pll)(struct snd_soc_codec *codec, int pll_id, int source,    
+	unsigned int freq_in, unsigned int freq_out);                      
+                                                         
+	unsigned int (*read)(struct snd_soc_codec *, unsigned int);               
+	int (*write)(struct snd_soc_codec *, unsigned int, unsigned int);         
+}
+
+class snd_pcm_str #yellow {
+	int stream;                 
+	struct snd_pcm *pcm;                                 
+                             
+	unsigned int substream_count;                        
+	unsigned int substream_opened;                       
+	struct snd_pcm_substream *substream;                 
+}
+snd_pcm_str ..> snd_pcm
+snd_pcm_str --* snd_pcm_substream
+
+class snd_pcm_substream #yellow {
+	struct snd_pcm *pcm;     
+	struct snd_pcm_str *pstr;
+	void *private_data; 
+
+	int stream;        
+
+	struct snd_dma_buffer dma_buffer;           
+	unsigned int dma_buf_id;                    
+	size_t dma_max;                             
+	        
+	struct snd_pcm_ops *ops;                    
+	      
+	struct snd_pcm_runtime *runtime;            
+	 
+	struct snd_pcm_substream *next;     
+}
+
+snd_pcm_substream ..> snd_pcm
+snd_pcm_substream ..> snd_pcm_str
+snd_pcm_substream ..> snd_pcm_runtime
+snd_pcm_substream -* snd_pcm_ops
+
+class snd_pcm_runtime #yellow {
+	struct snd_pcm_substream *trigger_master;                                                  
+	struct timespec trigger_tstamp;                               
+                                                                            
+	snd_pcm_uframes_t avail_max;                                                               
+	snd_pcm_uframes_t hw_ptr_base;                      
+	snd_pcm_uframes_t hw_ptr_interrupt;                 
+
+	unsigned int rate;                                
+	unsigned int channels;                     
+	snd_pcm_uframes_t period_size;                      
+	unsigned int periods;                                      
+	snd_pcm_uframes_t buffer_size;                           
+	snd_pcm_uframes_t min_align;            
+	size_t byte_align;                                                           
+
+	unsigned int period_step;           
+	snd_pcm_uframes_t start_threshold;  
+	snd_pcm_uframes_t stop_threshold;   
+	snd_pcm_uframes_t silence_threshold;
+
+	unsigned char *dma_area;                                             
+	dma_addr_t dma_addr;            
+	size_t dma_bytes;                                               
+
+	struct snd_dma_buffer *dma_buffer_p;  
+}
+
+snd_pcm_runtime --* snd_pcm_substream
+
+
+
+class jz_pcm_runtime_data #yellow {
+	struct snd_pcm_substream *substream;         
+	unsigned int pos;                            
+}
+
+jz_pcm_runtime_data ..> snd_pcm_substream
+
+@enduml

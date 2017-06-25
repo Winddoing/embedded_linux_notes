@@ -1,0 +1,41 @@
+@startuml bb.png
+
+
+participant snd_soc_dai_link
+participant snd_soc_register_card 
+participant snd_soc_pcm_runtime
+
+snd_soc_register_card -> Codec_side : 检查codec_name和codec_dai_name
+snd_soc_register_card -> Platform_side : 检查platform_name
+snd_soc_register_card -> CPU_side : 检查cpu_name和cpu_dai_name
+
+snd_soc_register_card -> snd_soc_initialize_card_lists : 初始化dai_dev_list, codec_dev_list, platform_dev_list
+
+snd_soc_register_card -> snd_soc_pcm_runtime : 申请snd_soc_pcm_runtime空间，根据snd_soc_dai_link
+
+snd_soc_dai_link --> snd_soc_pcm_runtime : 实例化
+
+snd_soc_register_card -> snd_soc_instantiate_card : 初始化每条link链路
+
+snd_soc_instantiate_card -> soc_bind_dai_link
+
+snd_soc_instantiate_card -> soc_bind_dai_link : 绑定CPU CODEC Platform
+CPU_side -> snd_soc_pcm_runtime
+Codec_side -> snd_soc_pcm_runtime
+Platform_side -> snd_soc_pcm_runtime
+snd_soc_instantiate_card -> snd_card_create : 创建声卡
+snd_soc_instantiate_card -> soc_probe_link_components : 
+snd_soc_instantiate_card -> soc_probe_link_dais
+	soc_probe_link_dais -> soc_new_pcm 
+		soc_new_pcm -> snd_pcm_new:  创建链路 
+		snd_pcm_ops -> snd_soc_pcm_runtime
+		soc_new_pcm -> snd_pcm_set_ops : playback
+		soc_new_pcm -> snd_pcm_set_ops : capture
+		soc_new_pcm -> pcm_new : [platform]
+		snd_pcm_new -> soc_new_pcm
+	soc_new_pcm -> soc_probe_link_dais
+snd_soc_instantiate_card -> snd_card_register
+
+snd_soc_instantiate_card -> snd_soc_register_card 
+
+@enduml
