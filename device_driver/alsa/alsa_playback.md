@@ -451,6 +451,7 @@ snd_soc_register_card
 ```
 
 实现:
+
 ``` C
 /* create a new pcm */
 int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
@@ -495,6 +496,7 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 }
 ```
 > file: sound/soc/soc-pcm.c
+
 ``` C
 void snd_pcm_set_ops(struct snd_pcm *pcm, int direction, struct snd_pcm_ops *ops)
 {
@@ -512,9 +514,8 @@ void snd_pcm_set_ops(struct snd_pcm *pcm, int direction, struct snd_pcm_ops *ops
 
 ## ioctl
 
-
-
 播放:
+
 ```
 ioctl:
 	(`sound/core/pcm_native.c`)
