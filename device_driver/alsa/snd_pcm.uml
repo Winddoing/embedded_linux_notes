@@ -1,0 +1,18 @@
+
+@startuml pp.png
+
+interface LIST_HEAD{
+	LIST_HEAD(snd_pcm_devices)
+}
+
+class snd_pcm {
+}
+
+
+LIST_HEAD <-up- snd_pcm
+
+
+
+
+
+@enduml

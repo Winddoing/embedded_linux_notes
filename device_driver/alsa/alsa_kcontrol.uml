@@ -1,0 +1,170 @@
+@startuml  aaa.png
+
+
+class snd_card {
+	unsigned int last_numid;    /* last used numeric ID */                         
+	struct rw_semaphore controls_rwsem; /* controls list lock */                   
+	rwlock_t ctl_files_rwlock;  /* ctl_files list lock */                          
+	int controls_count;     /* count of all controls */                            
+	int user_ctl_count;     /* count of all user controls */                       
+	struct list_head controls;  /* all controls for this card */                   
+	struct list_head ctl_files; /* active control files */                         
+
+}
+
+class snd_kcontrol_new {
+	snd_ctl_elem_iface_t iface;	/* interface identifier */
+	unsigned int device;		/* device/client number */
+	unsigned int subdevice;		/* subdevice (substream) number */
+	const unsigned char *name;	/* ASCII name of item */
+	unsigned int index;		/* index of item */
+	unsigned int access;		/* access rights */
+	unsigned int count;		/* count of same elements */
+	snd_kcontrol_info_t *info;
+	snd_kcontrol_get_t *get;
+	snd_kcontrol_put_t *put;
+	union {
+		snd_kcontrol_tlv_rw_t *c;
+		const unsigned int *p;
+	} tlv;
+	unsigned long private_value;
+}
+
+class snd_kcontrol_volatile {
+	struct snd_ctl_file *owner;	/* locked */
+	unsigned int access;	/* access rights */
+}
+
+snd_kcontrol_new  <-down- snd_kcontrol : snd_soc_cnew 
+
+class snd_kcontrol {
+	struct list_head list;		/* list of controls */
+	struct snd_ctl_elem_id id;
+	unsigned int count;		/* count of same elements */
+	snd_kcontrol_info_t *info;
+	snd_kcontrol_get_t *get;
+	snd_kcontrol_put_t *put;
+	union {
+		snd_kcontrol_tlv_rw_t *c;
+		const unsigned int *p;
+	} tlv;
+	unsigned long private_value;
+	void *private_data;
+	void (*private_free)(struct snd_kcontrol *kcontrol);
+	struct snd_kcontrol_volatile vd[0];	/* volatile data */
+}
+
+snd_kcontrol -down-|> snd_card : snd_soc_add_controls 
+snd_kcontrol -right-> snd_ctl_elem_id
+snd_kcontrol -left-* snd_kcontrol_volatile
+snd_kcontrol_volatile ..> snd_ctl_file
+
+class snd_kctl_event {
+	struct list_head list;	/* list of events */
+	struct snd_ctl_elem_id id;
+	unsigned int mask;
+}
+
+class snd_ctl_file {
+	struct list_head list;		/* list of all control files */
+	struct snd_card *card;
+	struct pid *pid;
+	int prefer_pcm_subdevice;
+	int prefer_rawmidi_subdevice;
+	wait_queue_head_t change_sleep;
+	spinlock_t read_lock;
+	struct fasync_struct *fasync;
+	int subscribed;			/* read interface is activated */
+	struct list_head events;	/* waiting events for read */
+}
+
+snd_ctl_file <-up- snd_kctl_event : snd_ctl_notify 
+snd_card -right-> snd_ctl_file
+snd_kctl_event --> snd_ctl_elem_id
+
+class snd_ctl_elem_id {
+	unsigned int numid;		/* numeric identifier, zero = invalid */
+	snd_ctl_elem_iface_t iface;	/* interface identifier */
+	unsigned int device;		/* device/client number */
+	unsigned int subdevice;		/* subdevice (substream) number */
+	unsigned char name[44];		/* ASCII name of item */
+	unsigned int index;		/* index of item */
+}
+
+class snd_ctl_elem_list {
+	unsigned int offset;		/* W: first element ID to get */
+	unsigned int space;		/* W: count of element IDs to get */
+	unsigned int used;		/* R: count of element IDs set */
+	unsigned int count;		/* R: count of all elements */
+	struct snd_ctl_elem_id __user *pids; /* R: IDs */
+	unsigned char reserved[50];
+}
+
+class snd_ctl_elem_info {
+	struct snd_ctl_elem_id id;	/* W: element ID */
+	snd_ctl_elem_type_t type;	/* R: value type - SNDRV_CTL_ELEM_TYPE_* */
+	unsigned int access;		/* R: value access (bitmask) - SNDRV_CTL_ELEM_ACCESS_* */
+	unsigned int count;		/* count of values */
+	__kernel_pid_t owner;		/* owner's PID of this control */
+	union {
+		struct {
+			long min;		/* R: minimum value */
+			long max;		/* R: maximum value */
+			long step;		/* R: step (0 variable) */
+		} integer;
+		struct {
+			long long min;		/* R: minimum value */
+			long long max;		/* R: maximum value */
+			long long step;		/* R: step (0 variable) */
+		} integer64;
+		struct {
+			unsigned int items;	/* R: number of items */
+			unsigned int item;	/* W: item number */
+			char name[64];		/* R: value name */
+			__u64 names_ptr;	/* W: names list (ELEM_ADD only) */
+			unsigned int names_length;
+		} enumerated;
+		unsigned char reserved[128];
+	} value;
+	union {
+		unsigned short d[4];		/* dimensions */
+		unsigned short *d_ptr;		/* indirect - obsoleted */
+	} dimen;
+	unsigned char reserved[64-4*sizeof(unsigned short)];
+}
+
+class snd_ctl_elem_value {
+	struct snd_ctl_elem_id id;	/* W: element ID */
+	unsigned int indirect: 1;	/* W: indirect access - obsoleted */
+	union {
+		union {
+			long value[128];
+			long *value_ptr;	/* obsoleted */
+		} integer;
+		union {
+			long long value[64];
+			long long *value_ptr;	/* obsoleted */
+		} integer64;
+		union {
+			unsigned int item[128];
+			unsigned int *item_ptr;	/* obsoleted */
+		} enumerated;
+		union {
+			unsigned char data[512];
+			unsigned char *data_ptr;	/* obsoleted */
+		} bytes;
+		struct snd_aes_iec958 iec958;
+	} value;		/* RO */
+	struct timespec tstamp;
+	unsigned char reserved[128-sizeof(struct timespec)];
+}
+
+class snd_ctl_tlv {
+	unsigned int numid;	/* control element numeric identification */
+	unsigned int length;	/* in bytes aligned to 4 */
+	unsigned int tlv[0];	/* first TLV */
+}
+
+
+
+@enduml

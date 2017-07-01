@@ -1,0 +1,36 @@
+
+@startuml  dd.png
+package "snd_soc_dapm_path_P" {
+	package "snd_soc_dapm_route_R" {
+		package "snd_soc_dapm_widget_s" {
+
+		}
+		package "kcontrol" {
+
+		}
+		package "snd_soc_dapm_widget_T" {
+
+		}
+	}
+}
+
+class snd_soc_dapm_path {
+}
+
+class snd_soc_dapm_widget {
+
+}
+
+class snd_soc_dapm_route {
+	const char *sink;             
+	const char *control;          
+	const char *source;           
+}
+
+
+snd_soc_dapm_widget -left-* snd_soc_dapm_route
+snd_soc_dapm_route -right-|> snd_soc_dapm_path : 实例化
+
+
+
+@enduml

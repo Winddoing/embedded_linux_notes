@@ -1,0 +1,105 @@
+@startuml ssss.png
+
+class snd_card {
+	int number;   
+
+	struct module *module;      /* top-level module */                   
+	void *private_data;     /* private data for soundcard */             
+
+	...
+	struct list_head devices;   /* devices */      
+}
+
+
+class snd_dev_pcm {
+	.type = SNDRV_DEV_PCM,
+}
+
+class snd_dev_timer {
+	.type = SNDRV_DEV_TIMER,
+}
+
+class snd_dev_etc {
+	...
+}
+
+class snd_dev_control {
+	.type = SNDRV_DEV_CONTROL,
+}
+
+class snd_device {
+	struct list_head list;      /* list of registered devices */               
+	struct snd_card *card;      /* card which holds this device */             
+	snd_device_state_t state;   /* state of the device */                      
+	snd_device_type_t type;     /* device type */                              
+	void *device_data;      /* device structure */                             
+	struct snd_device_ops *ops; /* operations */                               
+}
+
+class snd_minor_array {
+	struct snd_minor *snd_minors[SNDRV_OS_MINORS];
+	#define SNDRV_OS_MINORS         256 
+
+	snd_minor_0;
+	snd_minor_1;
+	snd_minor_2;
+	snd_minor_3;
+	snd_minor_4;
+}
+
+class snd_minor {
+	int type;           /* SNDRV_DEVICE_TYPE_XXX */                           
+	int card;           /* card number */                                     
+	int device;         /* device number */                                   
+	const struct file_operations *f_ops;    /* file operations */             
+	void *private_data;     /* private data for f_ops->open */                
+	struct device *dev;     /* device for sysfs */                            
+	struct snd_card *card_ptr;  /* assigned card instance */                  
+}
+
+class file_operations {
+	struct module *owner;                                                                              
+	loff_t (*llseek) (struct file *, loff_t, int);                                                     
+	ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);                                  
+	ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);                           
+	ssize_t (*aio_read) (struct kiocb *, const struct iovec *, unsigned long, loff_t);                 
+	ssize_t (*aio_write) (struct kiocb *, const struct iovec *, unsigned long, loff_t);                
+	int (*readdir) (struct file *, void *, filldir_t);                                                 
+	unsigned int (*poll) (struct file *, struct poll_table_struct *);                                  
+	long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);                               
+	long (*compat_ioctl) (struct file *, unsigned int, unsigned long);                                 
+	int (*mmap) (struct file *, struct vm_area_struct *);                                              
+	int (*open) (struct inode *, struct file *);                                                       
+	int (*flush) (struct file *, fl_owner_t id);                                                       
+	int (*release) (struct inode *, struct file *);                                                    
+	int (*fsync) (struct file *, loff_t, loff_t, int datasync);                                        
+	int (*aio_fsync) (struct kiocb *, int datasync);                                                   
+	int (*fasync) (int, struct file *, int);                                                           
+}
+
+note "用户程序需要打开设备时，驱动程序通过snd_minors[]全局数组和此设备号，可以获得snd_ctl_f_ops结构中的各个回调函数，然后通过这些回调函数访问" as N1
+note "数组下标是次设备号" as N2
+
+snd_minor_array <-left- N1
+snd_minor_array <-up- N2
+N2 <-up- snd_minor
+snd_minor_array <-up- snd_minor : snd_register_device_for_dev
+N1 ..> file_operations
+snd_minor -left-> file_operations
+snd_minor <.up. snd_dev_pcm 
+snd_minor <.up. snd_dev_timer
+snd_minor <.up. snd_dev_etc
+snd_minor <.up. snd_dev_control
+
+snd_card <-up- snd_dev_pcm : add_list
+snd_card <-up- snd_dev_timer : add_list
+snd_card <-up- snd_dev_etc : add_list
+snd_card <-up- snd_dev_control : add_list
+
+snd_dev_pcm *-down- snd_pcm
+snd_pcm *-right- snd_device
+snd_dev_timer *-down- snd_device
+snd_dev_etc *-down- snd_device
+snd_dev_control *-down- snd_device
+
+@enduml
