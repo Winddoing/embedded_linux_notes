@@ -79,8 +79,9 @@ struct snd_kcontrol_new {
 
 
 
-## dapm
+## 数据结构
 
+### snd_soc_dapm_type
 
 ``` C
 /* dapm widget types */                                                                                         
@@ -116,10 +117,7 @@ enum snd_soc_dapm_type {
     snd_soc_dapm_dai_link,      /* link between two DAI structures */                                         
 };                                                                                                            
 ```
-
-
-
-## 数据结构
+### snd_soc_dapm_widget
 
 ``` C
 /* dapm widget */
@@ -181,7 +179,38 @@ struct snd_soc_dapm_widget {
 };
 ```
 
+## dapm
 
+### Add Controls
+
+```
+snd_soc_add_codec_controls
+    |-> snd_soc_add_controls
+        |
+        |-> for { snd_ctl_add(card, snd_soc_cnew(control, data,control->name, prefix)); }
+```
+>sound/soc/soc-core.c
+
+作用: 
+
+### Add Widgets
+
+### Add Route
+
+
+## 相关术语
+
+### MIXER
+
+> Mixer      - Mixes several analog signals into a single analog signal. 
+
+>Mixer可以混合多个输入到输出 
+
+### MUX
+
+> Mux        - An analog switch that outputs only one of many inputs.
+
+>Mux只能从多个输入里选择一个作为输出
 
 ## 参考
 

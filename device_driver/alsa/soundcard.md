@@ -66,4 +66,6 @@ snd_pcm_new
         |-> snd_device_new(card, SNDRV_DEV_PCM, pcm, &ops))
 ```
 
+
+
 ### SNDRV_DEV_TIMER
