@@ -57,6 +57,103 @@ struct snd_kcontrol_new {
     unsigned long private_value;                                              
 };                                                                            
 ```
+### kcontrol的命名
+
+> kcontrol的作用由名称来区分，对于名称相同的kcontrol，则使用index区分。name定义的标准是“SOURCE DIRECTION FUNCTION”即“源 方向 功能”，SOURCE定义了kcontrol的源，如“Master”、“PCM”等；DIRECTION 则为“Playback”、“Capture”等，如果DIRECTION忽略，意味着Playback和capture双向；FUNCTION则可以是“Switch”、“Volume”和“Route”等。
+
+
+内核说明文档:
+
+```
+This document describes standard names of mixer controls.
+
+Syntax: SOURCE [DIRECTION] FUNCTION
+
+DIRECTION:
+  <nothing>	(both directions)
+  Playback
+  Capture
+  Bypass Playback
+  Bypass Capture
+
+FUNCTION:
+  Switch	(on/off switch)
+  Volume
+  Route		(route control, hardware specific)
+
+SOURCE:
+  Master
+  Master Mono
+  Hardware Master
+  Speaker	(internal speaker)
+  Headphone
+  Beep		(beep generator)
+  Phone
+  Phone Input
+  Phone Output
+  Synth
+  FM
+  Mic
+  Line
+  CD
+  Video
+  Zoom Video
+  Aux
+  PCM
+  PCM Front
+  PCM Rear
+  PCM Pan
+  Loopback
+  Analog Loopback	(D/A -> A/D loopback)
+  Digital Loopback	(playback -> capture loopback - without analog path)
+  Mono
+  Mono Output
+  Multi
+  ADC
+  Wave
+  Music
+  I2S
+  IEC958
+
+Exceptions:
+  [Digital] Capture Source
+  [Digital] Capture Switch	(aka input gain switch)
+  [Digital] Capture Volume	(aka input gain volume)
+  [Digital] Playback Switch	(aka output gain switch)
+  [Digital] Playback Volume	(aka output gain volume)
+  Tone Control - Switch
+  Tone Control - Bass
+  Tone Control - Treble
+  3D Control - Switch
+  3D Control - Center
+  3D Control - Depth
+  3D Control - Wide
+  3D Control - Space
+  3D Control - Level
+  Mic Boost [(?dB)]
+
+PCM interface:
+
+  Sample Clock Source	{ "Word", "Internal", "AutoSync" }
+  Clock Sync Status	{ "Lock", "Sync", "No Lock" }
+  External Rate		/* external capture rate */
+  Capture Rate		/* capture rate taken from external source */
+
+IEC958 (S/PDIF) interface:
+
+  IEC958 [...] [Playback|Capture] Switch	/* turn on/off the IEC958 interface */
+  IEC958 [...] [Playback|Capture] Volume	/* digital volume control */
+  IEC958 [...] [Playback|Capture] Default	/* default or global value - read/write */
+  IEC958 [...] [Playback|Capture] Mask		/* consumer and professional mask */
+  IEC958 [...] [Playback|Capture] Con Mask	/* consumer mask */
+  IEC958 [...] [Playback|Capture] Pro Mask	/* professional mask */
+  IEC958 [...] [Playback|Capture] PCM Stream	/* the settings assigned to a PCM stream */
+  IEC958 Q-subcode [Playback|Capture] Default	/* Q-subcode bits */
+  IEC958 Preamble [Playback|Capture] Default	/* burst preamble words (4*16bits) */
+```
+> Documentation/sound/alsa/ControlNames.txt
+
+
 
 ## widget
 
@@ -181,6 +278,11 @@ struct snd_soc_dapm_widget {
 
 ## dapm
 
+
+```
+
+```
+
 ### Add Controls
 
 ```
@@ -218,3 +320,4 @@ snd_soc_add_codec_controls
 2. [ linux alsa 音频路径切换](http://blog.csdn.net/xiaojsj111/article/details/25601777)
 3. [ALSA声卡驱动中的DAPM详解之三：如何定义各种widget](http://blog.csdn.net/DroidPhone/article/details/12978287)
 4. [codec--wm8960](http://www.sunnyqi.com/upLoad/product/month_1306/WM8960.pdf)
+5. [snd_kcontrol_new名称中的SOURCE字段](http://blog.csdn.net/azloong/article/details/6324901)

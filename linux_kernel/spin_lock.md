@@ -244,6 +244,24 @@ static inline void arch_spin_unlock(arch_spinlock_t *lock)
 
 > 内核中通过`CONFIG_SMP`控制不同的头文件(`<linux/spinlock_api_smp.h>`, `<linux/spinlock_api_up.h>`),来改变接口的具体实现
 
+
+## spin_lock的dubug
+
+
+### 内核配置
+
+```
+Kernel hacking  ---> 
+     -*- Spinlock and rw-lock debugging: basic checks    [CONFIG_DEBUG_SPINLOCK]
+     -*- Mutex debugging: basic checks                   [CONFIG_DEBUG_MUTEXES]
+     -*- Lock debugging: detect incorrect freeing of live locks       [CONFIG_DEBUG_LOCK_ALLOC]
+     [*] Lock debugging: prove locking correctness                    [CONFIG_PROVE_LOCKING]
+
+```
+
+
+
+
 ## 参考
 
 1. [spinlock与linux内核调度的关系](http://www.chinabaike.com/2011/0116/175835.html)

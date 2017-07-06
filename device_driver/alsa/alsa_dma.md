@@ -22,14 +22,16 @@ struct snd_dma_buffer {
 
 在通过machine将每一条声卡链路建立完成后.将通过`pcm_new`申请dma_buffer
 
-* 申请当前的stream支持的最大的DMA buffer内存空间.
+### 申请当前的stream支持的最大的DMA buffer内存空间.
+
 ``` C
 snd_pcm_lib_preallocate_pages_for_all(pcm, SNDRV_DMA_TYPE_DEV,       
     card->dev, buffer_size, buffer_bytes_max);                       
 ```
 >dma buffer获得后，即是获得了dma操作的源地址，那么目的地址在哪里？
 
-* 实际使用的DMA buffer空间大小,跟实际的采样率,位宽,通道有关.
+### 实际使用的DMA buffer空间大小,跟实际的采样率,位宽,通道有关.
+
 ``` C
 snd_pcm_lib_malloc_pages(substream, params_buffer_bytes(params));
 ```
