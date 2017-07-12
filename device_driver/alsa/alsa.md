@@ -217,6 +217,25 @@ S24 --
 U24 --
 
 
+## 状态机
+
+
+```
+typedef int __bitwise snd_pcm_state_t;                                                                        
+#define SNDRV_PCM_STATE_OPEN        ((__force snd_pcm_state_t) 0) /* stream is open */                        
+#define SNDRV_PCM_STATE_SETUP       ((__force snd_pcm_state_t) 1) /* stream has a setup */                    
+#define SNDRV_PCM_STATE_PREPARED    ((__force snd_pcm_state_t) 2) /* stream is ready to start */              
+#define SNDRV_PCM_STATE_RUNNING     ((__force snd_pcm_state_t) 3) /* stream is running */                     
+#define SNDRV_PCM_STATE_XRUN        ((__force snd_pcm_state_t) 4) /* stream reached an xrun */                
+#define SNDRV_PCM_STATE_DRAINING    ((__force snd_pcm_state_t) 5) /* stream is draining */                           
+#define SNDRV_PCM_STATE_PAUSED      ((__force snd_pcm_state_t) 6) /* stream is paused */                      
+#define SNDRV_PCM_STATE_SUSPENDED   ((__force snd_pcm_state_t) 7) /* hardware is suspended */                 
+#define SNDRV_PCM_STATE_DISCONNECTED    ((__force snd_pcm_state_t) 8) /* hardware is disconnected */          
+#define SNDRV_PCM_STATE_LAST        SNDRV_PCM_STATE_DISCONNECTED                                              
+```
+
+
+
 
 
 ## 参考:
@@ -229,3 +248,5 @@ U24 --
 6. [alsa driver](http://www.alsa-project.org/main/index.php/Minivosc)
 7. [PCM data flow之二：Frames and Periods](http://www.xuebuyuan.com/1519752.html)
 8. [alsa-project FramesPeriods](http://alsa-project.org/main/index.php/FramesPeriods)
+9. [内核Alsa之pcm (转载)  ](http://kuafu80.blog.163.com/blog/static/12264718020148511458729/)
+10. [声卡设备alsa音频架构1](http://www.cnblogs.com/jiangu66/archive/2013/05/06/3063406.html)

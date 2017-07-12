@@ -266,3 +266,4 @@ Kernel hacking  --->
 
 1. [spinlock与linux内核调度的关系](http://www.chinabaike.com/2011/0116/175835.html)
 2. [Linux 内核的排队自旋锁(FIFO Ticket Spinlock)](https://www.ibm.com/developerworks/cn/linux/l-cn-spinlock/index.html)
+3. [Linux内核spin_lock与spin_lock_irq分析](http://blog.csdn.net/zhanglei4214/article/details/6837697)
