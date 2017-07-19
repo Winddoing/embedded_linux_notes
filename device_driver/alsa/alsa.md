@@ -234,7 +234,9 @@ typedef int __bitwise snd_pcm_state_t;
 #define SNDRV_PCM_STATE_LAST        SNDRV_PCM_STATE_DISCONNECTED                                              
 ```
 
+## 其他
 
+* 采样率和实际的分频误差在5%左右
 
 
 
