@@ -104,6 +104,76 @@ runtime->buffer_size = params_buffer_size(params);
 >snd_soc_set_runtime_hwparams
 
 
+
+## DMA buffer 大小
+
+
+**DMA buffer的大小必须时frame和dma burst的倍数,也就是二者大最小公倍数的倍数**
+
+限制buffer的大小关系,当然最特定的播放条件可以通过手动设置buffer最大值和周期的大小进行设置.
+
+根本性的解决
+
+```
+int xxx_open()
+{
+
+ ret = snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIOD_BYTES);                
+ if (ret < 0)                                                                                  
+     return ret;                                                                               
+                                                                                               
+ if (as_dma->dma_fth_quirk) {                                                                  
+     snd_pcm_hw_rule_add(substream->runtime, 0,                                                
+             SNDRV_PCM_HW_PARAM_PERIOD_BYTES,                                                  
+             ingenic_as_dma_period_bytes_quirk,                                                
+             NULL,                                                                             
+             SNDRV_PCM_HW_PARAM_FRAME_BITS,                                                    
+             SNDRV_PCM_HW_PARAM_PERIOD_BYTES,                                                  
+             -1);                                                                              
+ }
+}                                                                                             
+```
+
+```
+static int ingenic_as_dma_period_bytes_quirk(struct snd_pcm_hw_params *params,                               
+        struct snd_pcm_hw_rule *rule)                                                                        
+{                                                                                                            
+    struct snd_interval *iperiod_bytes = hw_param_interval(params,                                           
+            SNDRV_PCM_HW_PARAM_PERIOD_BYTES);                                                                
+    struct snd_interval *iframe_bits = hw_param_interval(params,                                             
+            SNDRV_PCM_HW_PARAM_FRAME_BITS);                                                                  
+    int align_bytes = DCM_TSZ_MAX_WORD << 2; //32 world                                                                
+    int min_frame_bytes = iframe_bits->min >> 3;                                                             
+    int max_frame_bytes = iframe_bits->max >> 3;                                                             
+    int min_period_bytes = iperiod_bytes->min;                                                               
+    int max_period_bytes = iperiod_bytes->max;                                                               
+    int min_align_bytes, max_align_bytes;                                                                    
+    struct snd_interval nperiod_bytes;                                                                       
+                                                                                                             
+    snd_interval_any(&nperiod_bytes);                                                                        
+    min_align_bytes = lcm(align_bytes, min_frame_bytes);                                                     
+    min_period_bytes = (min_period_bytes + min_align_bytes - 1) / min_align_bytes;                           
+    nperiod_bytes.min = min_period_bytes * min_align_bytes;                                                  
+                                                                                                             
+    max_align_bytes = lcm(align_bytes, max_frame_bytes);                                                     
+    max_period_bytes = max_period_bytes / max_align_bytes;                                                   
+    nperiod_bytes.max = max_period_bytes * max_align_bytes;                                                  
+                                                                                                             
+    DMA_DEBUG_MSG("==> %s %d : align_bytes = %d \n\                                                          
+            frame_bytes.min (%d)\t\tframe_bytes.max (%d) \n\                                                 
+            period_bytes.min  [%d]\tperiod_bytes.max  [%d] \n\                                               
+            nperiod_bytes.min [%d]\tnperiod_bytes.max [%d]\n",                                               
+            __func__, __LINE__, align_bytes,                                                                 
+            min_frame_bytes, max_frame_bytes, iperiod_bytes->min,                                            
+            iperiod_bytes->max, nperiod_bytes.min, nperiod_bytes.max);                                       
+    return snd_interval_refine(iperiod_bytes, &nperiod_bytes);                                               
+}                                                                                                            
+```
+
+
+
+
+
 ## 参考
 
 1. [内核Alsa之pcm](http://kuafu80.blog.163.com/blog/static/12264718020148511458729/)
