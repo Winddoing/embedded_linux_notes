@@ -4,6 +4,12 @@
 
 ## xargs
 
+```
+ find . -type f -name "*" | xargs grep "root/init.sh"
+```
+> -type f 表示只找文件
+> -name “xxx” 表示查找特定文件；也可以不写，表示找所有文件
+
 ## ldd
 
 ``` shell
@@ -18,3 +24,13 @@ $ldd adb
 	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xb729d000)
 	/lib/ld-linux.so.2 (0xb771d000)
 ```
+
+## tail
+
+* 查看实时日志
+
+```
+tail -f  audio_test_20170814-14.log
+```
+> -f 循环读取
+

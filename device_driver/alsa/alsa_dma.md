@@ -114,6 +114,19 @@ runtime->buffer_size = params_buffer_size(params);
 
 根本性的解决
 
+### 数据结构
+
+```
+struct snd_interval {                      
+    unsigned int min, max;  //最小,最大值               
+    unsigned int openmin:1, //最小值的开区间,使能,默认闭区间               
+             openmax:1,                    
+             integer:1,     //使能后取范围内的整数               
+             empty:1;                      
+};                                         
+```
+
+### 实现
 ```
 int xxx_open()
 {
@@ -169,6 +182,22 @@ static int ingenic_as_dma_period_bytes_quirk(struct snd_pcm_hw_params *params,
     return snd_interval_refine(iperiod_bytes, &nperiod_bytes);                                               
 }                                                                                                            
 ```
+
+### 调用过程
+
+```
+int snd_pcm_hw_refine(struct snd_pcm_substream *substream,                
+              struct snd_pcm_hw_params *params)                           
+{                                                                         
+    ...
+    changed = r->func(params, r);        
+    ...
+}
+```
+> sound/core/pcm_native.c
+
+
+
 
 
 
