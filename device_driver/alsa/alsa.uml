@@ -1,0 +1,119 @@
+
+@startuml aa.png
+
+package machine {
+class snd_soc_pcm_runtime {
+
+}
+
+class snd_pcm_substream {
+
+}
+
+interface snd_pcm_ops {
+
+}
+
+note "snd_pcm_set_ops: substream->ops = ops" as N1
+
+snd_pcm_substream <-left- N1
+N1 <-left- snd_soc_pcm_runtime
+
+snd_soc_pcm_runtime <-up- snd_pcm_ops
+snd_pcm_substream <-up- snd_pcm_ops
+
+
+class snd_soc_dai_link {
+
+}
+
+snd_soc_pcm_runtime <-down- snd_soc_dai_link : copy
+
+
+class snd_soc_card {
+
+}
+
+snd_soc_card <.up. snd_soc_pcm_runtime
+snd_soc_card <.up. snd_soc_dai_link
+}
+
+'======= platform =======
+
+package platform {
+class snd_soc_platform_driver {
+
+}
+
+interface snd_pcm_ops_platform {
+
+}
+
+snd_soc_platform_driver <-up- snd_pcm_ops_platform : .ops = &snd_pcm_ops
+
+class snd_soc_platform {
+}
+
+snd_soc_platform <-up- snd_soc_platform_driver : snd_soc_add_platform
+
+interface platform_list {
+	static LIST_HEAD(platform_list);
+}
+
+platform_list <-up- snd_soc_platform : list_add
+}
+
+'===== codec ====
+package codec {
+class snd_soc_codec_driver {
+
+}
+
+class snd_soc_codec {
+
+}
+
+snd_soc_codec <-up- snd_soc_codec_driver : snd_soc_register_codec
+
+interface codec_list {
+	static LIST_HEAD(codec_list);
+}
+
+codec_list <-up- snd_soc_codec : list_add
+}
+
+'===== dai =====
+
+package dai {
+class snd_soc_dai_driver {
+}
+
+class snd_soc_dai_ops {
+}
+
+snd_soc_dai_driver <-up- snd_soc_dai_ops
+
+class snd_soc_component_driver {
+
+}
+class snd_soc_component {
+
+}
+
+snd_soc_component <-up- snd_soc_component_driver : snd_soc_register_component
+
+class snd_soc_dai {
+
+}
+
+snd_soc_dai <-up- snd_soc_dai_driver : snd_soc_register_dai
+
+interface dai_list {
+	static LIST_HEAD(dai_list); 
+}
+
+dai_list <-up- snd_soc_dai : list_add
+}
+
+
+@enduml
