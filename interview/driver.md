@@ -6,9 +6,11 @@
 
 ## I2C触摸屏芯片与CPU的数据传输流程？画出相关图例？（这题目记得不是太清楚了，大概是考查I2C设备驱动的数据传输过程）
 
+1. [I2C总线信号时序总结](http://blog.csdn.net/chuckfql/article/details/19834137)
+
 ## USB设备的枚举过程？
 
-##　PSRAM、SDRAM、DDR、DDR2的时序特性？
+## PSRAM、SDRAM、DDR、DDR2的时序特性？
 
 ## 蓝牙通信速率
 
