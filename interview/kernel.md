@@ -7,7 +7,7 @@
 ### kmalloc
 
 ```
-static __always_inline void *kmalloc(size_t size, gfp_t flags) 
+static __always_inline void *kmalloc(size_t size, gfp_t flags)
 ```
 > include/linux/slab.h
 
@@ -39,10 +39,10 @@ kmalloc 能够处理的最小分配是 32 或者 64 字节, 依赖系统的体�
 ### kzalloc
 
 ```
-static inline void *kzalloc(size_t size, gfp_t flags)            
-{                                                                
-    return kmalloc(size, flags | __GFP_ZERO);                    
-}                                                                
+static inline void *kzalloc(size_t size, gfp_t flags)
+{
+    return kmalloc(size, flags | __GFP_ZERO);
+}
 ```
 
 
@@ -51,7 +51,21 @@ static inline void *kzalloc(size_t size, gfp_t flags)
 
 ## IRQ和FIQ有什么区别，在CPU里面是是怎么做的？
 
+> 非MIPS架构，ARM架构的相关名词和对中断的实现方式
+
 ## 中断的上半部分和下半部分的问题：讲下分成上半部分和下半部分的原因，为何要分？讲下如何实现？
+
+* 中断处理程序正在执行时，会屏蔽同条中断线上的中断请求
+* 下半部可以通过多种机制来完成: tasklet，工作队列，软中断
+* 中断上下两部分最大的不同是上半部分不可中断，而下半部分可中断
+
+**划分：**
+ Ⅰ．如果该任务对时间比较敏感，将其放在上半部中执行。
+ Ⅱ．如果该任务和硬件相关，一般放在上半部中执行。
+ Ⅲ．如果该任务要保证不被其他中断打断，放在上半部中执行（因为这是系统关中断）。
+ Ⅳ．其他不太紧急的任务，般考虑在下半部执行。
+
+ > 下半部分并不需要指明一个确切时间，只要把这些任务推迟一点，让它们在系统不太忙并且中断恢复后执行就可以了。通常下半部分在中断处理程序一返回就会马上运行，下半部分执行的关键在于当它们运行的时候，允许响应所有的中断。下半部分是一种推后执行任务，它将某些不那么紧迫的任务推迟到系统更方便的时刻运行。 内核中实现下半部的手段不断演化，目前已经从最原始的BH（bottom half）衍生出BH（在2.5中去除）、软中断（softirq在2.3引 入）、tasklet（在2.3引入）、工作队列（work queue在2.5引入）。这里主要分析讨论后三种方式。
 
 ## 在软件上，有中断号，中断向量表，中断函数，3者的关系是什么？
 
@@ -77,3 +91,4 @@ static inline void *kzalloc(size_t size, gfp_t flags)
 ## 参考
 
 1. [kmalloc/kfree,vmalloc/vfree函数用法和区别](http://blog.csdn.net/tigerjibo/article/details/6412881)
+2. [中断的上半部分和下半部分](http://blog.csdn.net/zhanghuaichao/article/details/48601587)

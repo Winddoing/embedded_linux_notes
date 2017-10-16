@@ -12,3 +12,4 @@ RS232	电气接口规范	2	串口通信的协议，定义了，DCE和DTE之间�
 
 1. [RS232串口协议详解](https://www.crifan.com/files/doc/docbook/rs232_serial_intro/release/webhelp/rs232_vs_uart.html)
 2. [从tty到uart层，分析uart数据流程（一）](http://blog.csdn.net/changqing1990/article/details/44171201)
+3. [UART时序分析](http://blog.csdn.net/liuhan33025/article/details/51131120)

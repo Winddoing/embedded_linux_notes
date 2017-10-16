@@ -1,0 +1,31 @@
+@startuml smp.png
+
+start
+:start_kernel;
+fork
+	:boot_cpu_init();
+	:smp_prepare_boot_cpu();
+	:rest_init();
+	note right
+		kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);
+		kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
+	end note
+	fork
+		:kernel_init();
+		:kernel_init_freeable();
+		:smp_prepare_cpus(setup_max_cpus);
+		split
+		:mp_ops->prepare_cpus(max_cpus); :
+		end split
+		:do_pre_smp_initcalls();
+		:smp_init();           
+		:sched_init_smp();  
+	fork again
+		:kthreadd();
+	end fork
+	:init_idle_bootup_task(current);
+	:cpu_startup_entry(CPUHP_ONLINE);
+end fork
+stop
+
+@enduml
