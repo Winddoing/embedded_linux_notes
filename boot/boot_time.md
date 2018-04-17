@@ -3,6 +3,9 @@
 
 
 ```
+setenv bootargs 'console=ttyS2,115200 mem=256M@0x0 mem=256M@0x30000000 rootfstype=ext4 root=/d
+ev/mmcblk0p7 rootdelay=3 rw initcall_debug printk.time=1'
+
 dmesg -s 131072 > ktime
 cat ktime | perl scripts/bootgraph.pl > boot.svg
 ```
