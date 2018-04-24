@@ -14,3 +14,4 @@ cat ktime | perl scripts/bootgraph.pl > boot.svg
 2. [Linux加速启动，启动时间的极限优化](https://blog.csdn.net/reille/article/details/5694155)
 3. [怎样在 1 秒内启动 Linux](http://www.codeceo.com/start-linux-1-second.html)
 4. [linux启动](http://www.eetop.cn/blog/index.php?uid/1539194/action/viewspace/itemid/403701/php/1)
+5. [ Linux Bootup Time](https://blog.csdn.net/younger_china/article/details/51616478)
